@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'lang/translation.php';
 
 // Sample process data for demonstration
 $processes = [
@@ -119,7 +120,7 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processes Management - RiskGuard Pro</title>
+    <title><?php echo __('Processes Management'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -669,27 +670,27 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php" class="active"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> Reports</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php" class="active"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a></li>
+                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?></a></li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="Admin User">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="<?php echo __('Admin User'); ?>">
                 <div>
-                    <strong>Admin User</strong>
-                    <small>System Administrator</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -697,7 +698,7 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
         <div class="content">
             <header class="header">
                 <div class="header-left">
-                    <h1>Processes Management</h1>
+                    <h1><?php echo __('Processes Management'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -705,7 +706,7 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
                         <span class="badge">5</span>
                     </div>
                     <a href="logout.php" class="btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <?php echo __('Logout'); ?>
                     </a>
                 </div>
             </header>
@@ -713,56 +714,56 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
             <main class="main-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Processes</h3>
+                        <h3><?php echo __('Total Processes'); ?></h3>
                         <div class="stat-value"><?php echo $total_processes; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-cogs"></i> All processes
+                            <i class="fas fa-cogs"></i> <?php echo __('All processes'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Root Processes</h3>
+                        <h3><?php echo __('Root Processes'); ?></h3>
                         <div class="stat-value"><?php echo $root_processes; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-layer-group"></i> Top level
+                            <i class="fas fa-layer-group"></i> <?php echo __('Top level'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Activities</h3>
+                        <h3><?php echo __('Total Activities'); ?></h3>
                         <div class="stat-value"><?php echo $total_activities; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-tasks"></i> Sub-processes
+                            <i class="fas fa-tasks"></i> <?php echo __('Sub-processes'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Risks</h3>
+                        <h3><?php echo __('Total Risks'); ?></h3>
                         <div class="stat-value"><?php echo $total_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-exclamation-triangle"></i> Being managed
+                            <i class="fas fa-exclamation-triangle"></i> <?php echo __('Being managed'); ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Business Processes</h3>
-<a href="add_process.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add New Process
+                        <h3 class="card-title"><?php echo __('Business Processes'); ?></h3>
+                        <a href="add_process.php" class="btn btn-success">
+                            <i class="fas fa-plus"></i> <?php echo __('Add New Process'); ?>
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="search-filter">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search processes..." id="searchInput">
+                                <input type="text" placeholder="<?php echo __('Search processes...'); ?>" id="searchInput">
                             </div>
                             <select class="filter-select" id="domaineFilter">
-                                <option value="">All Domains</option>
+                                <option value=""><?php echo __('All Domains'); ?></option>
                                 <option value="Security Domain">Security Domain</option>
                                 <option value="Financial Operations">Financial Operations</option>
                                 <option value="Operations">Operations</option>
                             </select>
                             <select class="filter-select" id="projectFilter">
-                                <option value="">All Projects</option>
+                                <option value=""><?php echo __('All Projects'); ?></option>
                                 <option value="Customer Portal Redesign">Customer Portal Redesign</option>
                                 <option value="Mobile Banking App">Mobile Banking App</option>
                                 <option value="ERP System Implementation">ERP System Implementation</option>
@@ -772,16 +773,16 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
                         <table class="table" id="processesTable">
                             <thead>
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Process Name</th>
-                                    <th>Domain</th>
-                                    <th>Entity</th>
-                                    <th>Project</th>
-                                    <th>Parent Process</th>
-                                    <th>Activities</th>
-                                    <th>Risks</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <th><?php echo __('Code'); ?></th>
+                                    <th><?php echo __('Process Name'); ?></th>
+                                    <th><?php echo __('Domain'); ?></th>
+                                    <th><?php echo __('Entity'); ?></th>
+                                    <th><?php echo __('Project'); ?></th>
+                                    <th><?php echo __('Parent Process'); ?></th>
+                                    <th><?php echo __('Activities'); ?></th>
+                                    <th><?php echo __('Risks'); ?></th>
+                                    <th><?php echo __('Created'); ?></th>
+                                    <th><?php echo __('Actions'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -812,7 +813,7 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
                                                 <?php echo htmlspecialchars($process['parent_name']); ?>
                                             </span>
                                         <?php else: ?>
-                                            <span style="color: var(--gray); font-style: italic;">Root Process</span>
+                                            <span style="color: var(--gray); font-style: italic;"><?php echo __('Root Process'); ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td><?php echo $process['activities_count']; ?></td>
@@ -820,10 +821,10 @@ $total_risks = array_sum(array_column($processes, 'risks_count'));
                                     <td><?php echo date('M j, Y', strtotime($process['createdAt'])); ?></td>
                                     <td>
                                         <a href="process_details.php?id=<?php echo $process['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
                                         <a href="process_edit.php?id=<?php echo $process['id']; ?>" class="btn btn-primary btn-sm" style="background: var(--warning);">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="fas fa-edit"></i> <?php echo __('Edit'); ?>
                                         </a>
                                     </td>
                                 </tr>

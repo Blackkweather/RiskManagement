@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'lang/translation.php';
 
 // Sample client data for demonstration
 $clients = [
@@ -75,7 +76,7 @@ $total_risks = array_sum(array_column($clients, 'active_risks'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clients Management - RiskGuard Pro</title>
+    <title><?php echo __('Clients Management'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -626,27 +627,27 @@ $total_risks = array_sum(array_column($clients, 'active_risks'));
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php" class="active"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> Reports</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php" class="active"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a></li>
+                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?></a></li>
                 </ul>
             </nav>
             
             <div class="user-info">
                 <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="Admin User">
                 <div>
-                    <strong>Admin User</strong>
-                    <small>System Administrator</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -654,7 +655,7 @@ $total_risks = array_sum(array_column($clients, 'active_risks'));
         <div class="content">
             <header class="header">
                 <div class="header-left">
-                    <h1>Clients Management</h1>
+                    <h1><?php echo __('Clients Management'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -662,7 +663,7 @@ $total_risks = array_sum(array_column($clients, 'active_risks'));
                         <span class="badge">5</span>
                     </div>
                     <a href="logout.php" class="btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <?php echo __('Logout'); ?>
                     </a>
                 </div>
             </header>
@@ -670,77 +671,77 @@ $total_risks = array_sum(array_column($clients, 'active_risks'));
             <main class="main-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Clients</h3>
+                        <h3><?php echo __('Total Clients'); ?></h3>
                         <div class="stat-value"><?php echo $total_clients; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-building"></i> Organizations
+                            <i class="fas fa-building"></i> <?php echo __('Organizations'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Active Clients</h3>
+                        <h3><?php echo __('Active Clients'); ?></h3>
                         <div class="stat-value"><?php echo $active_clients; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-check-circle"></i> With risk appetite
+                            <i class="fas fa-check-circle"></i> <?php echo __('With risk appetite'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Projects</h3>
+                        <h3><?php echo __('Total Projects'); ?></h3>
                         <div class="stat-value"><?php echo $total_projects; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-project-diagram"></i> Across all clients
+                            <i class="fas fa-project-diagram"></i> <?php echo __('Across all clients'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Risks</h3>
+                        <h3><?php echo __('Total Risks'); ?></h3>
                         <div class="stat-value"><?php echo $total_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-exclamation-triangle"></i> Being managed
+                            <i class="fas fa-exclamation-triangle"></i> <?php echo __('Being managed'); ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Client Organizations</h3>
-                        <a href="client_add.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add New Client
+                        <h3 class="card-title"><?php echo __('Client Organizations'); ?></h3>
+                        <a href="add_client.php" class="btn btn-success">
+                            <i class="fas fa-plus"></i> <?php echo __('Add New Client'); ?>
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="search-filter">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search clients..." id="searchInput">
+                                <input type="text" placeholder="<?php echo __('Search clients...'); ?>" id="searchInput">
                             </div>
                             <select class="filter-select" id="sectorFilter">
-                                <option value="">All Sectors</option>
-                                <option value="Technology">Technology</option>
-                                <option value="Financial Services">Financial Services</option>
-                                <option value="Healthcare">Healthcare</option>
-                                <option value="Manufacturing">Manufacturing</option>
-                                <option value="Retail">Retail</option>
+                                <option value=""><?php echo __('All Sectors'); ?></option>
+                                <option value="Technology"><?php echo __('Technology'); ?></option>
+                                <option value="Financial Services"><?php echo __('Financial Services'); ?></option>
+                                <option value="Healthcare"><?php echo __('Healthcare'); ?></option>
+                                <option value="Manufacturing"><?php echo __('Manufacturing'); ?></option>
+                                <option value="Retail"><?php echo __('Retail'); ?></option>
                             </select>
                             <select class="filter-select" id="configFilter">
-                                <option value="">All Configurations</option>
-                                <option value="NORMAL">Normal</option>
-                                <option value="COEFFICIENT">Coefficient</option>
-                                <option value="BASIC">Basic</option>
+                                <option value=""><?php echo __('All Configurations'); ?></option>
+                                <option value="NORMAL"><?php echo __('Normal'); ?></option>
+                                <option value="COEFFICIENT"><?php echo __('Coefficient'); ?></option>
+                                <option value="BASIC"><?php echo __('Basic'); ?></option>
                             </select>
                         </div>
                         
                         <table class="table" id="clientsTable">
                             <thead>
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Organization</th>
-                                    <th>Legal Form</th>
-                                    <th>Sector</th>
-                                    <th>Configuration</th>
-                                    <th>Risk Appetite</th>
-                                    <th>Projects</th>
-                                    <th>Active Risks</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <th><?php echo __('Code'); ?></th>
+                                    <th><?php echo __('Organization'); ?></th>
+                                    <th><?php echo __('Legal Form'); ?></th>
+                                    <th><?php echo __('Sector'); ?></th>
+                                    <th><?php echo __('Configuration'); ?></th>
+                                    <th><?php echo __('Risk Appetite'); ?></th>
+                                    <th><?php echo __('Projects'); ?></th>
+                                    <th><?php echo __('Active Risks'); ?></th>
+                                    <th><?php echo __('Created'); ?></th>
+                                    <th><?php echo __('Actions'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -757,7 +758,7 @@ $total_risks = array_sum(array_column($clients, 'active_risks'));
                                     </td>
                                     <td>
                                         <span class="status-badge <?php echo $client['appetencyActive'] ? 'status-active' : 'status-inactive'; ?>">
-                                            <?php echo $client['appetencyActive'] ? 'Active' : 'Inactive'; ?>
+                                            <?php echo $client['appetencyActive'] ? __('Active') : __('Inactive'); ?>
                                         </span>
                                     </td>
                                     <td><?php echo $client['projects_count']; ?></td>
@@ -765,10 +766,10 @@ $total_risks = array_sum(array_column($clients, 'active_risks'));
                                     <td><?php echo date('M j, Y', strtotime($client['createdAt'])); ?></td>
                                     <td>
                                         <a href="client_details.php?id=<?php echo $client['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
                                         <a href="client_edit.php?id=<?php echo $client['id']; ?>" class="btn btn-primary btn-sm" style="background: var(--warning);">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="fas fa-edit"></i> <?php echo __('Edit'); ?>
                                         </a>
                                     </td>
                                 </tr>

@@ -1,63 +1,95 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
+require_once 'lang/translation.php';
 
-// Sample data for demonstration (since database setup is pending)
+// Include database connection
+require_once 'config/database.php';
+$db = new Database();
+$conn = $db->getConnection();
+
+// Fetch dashboard stats from database
 $stats = [
-    'total_clients' => 12,
-    'active_projects' => 8,
-    'open_risks' => 23,
-    'high_priority_risks' => 5
+    'total_clients' => 0,
+    'active_projects' => 0,
+    'open_risks' => 0,
+    'high_priority_risks' => 0
 ];
+$risk_trends = [];
+$risk_by_category = [];
+if ($conn) {
+    $stats['total_clients'] = (int)$conn->query("SELECT COUNT(*) FROM clientprofile")->fetchColumn();
+    $stats['active_projects'] = (int)$conn->query("SELECT COUNT(*) FROM project WHERE active = 1")->fetchColumn();
+    $stats['open_risks'] = (int)$conn->query("SELECT COUNT(*) FROM risk WHERE active = 1")->fetchColumn();
+    $stats['high_priority_risks'] = (int)$conn->query("SELECT COUNT(*) FROM risk WHERE brutCriticality >= 18")->fetchColumn();
 
-$recent_risks = [
-    [
-        'id' => 1,
-        'code' => 'RISK-001',
-        'name' => 'Data Security Vulnerability',
-        'project_name' => 'Customer Portal',
-        'brutCriticality' => 22,
-        'createdAt' => '2025-06-10'
-    ],
-    [
-        'id' => 2,
-        'code' => 'RISK-002',
-        'name' => 'Budget Overrun Risk',
-        'project_name' => 'Mobile Application',
-        'brutCriticality' => 18,
-        'createdAt' => '2025-06-09'
-    ],
-    [
-        'id' => 3,
-        'code' => 'RISK-003',
-        'name' => 'Key Personnel Unavailability',
-        'project_name' => 'Data Migration',
-        'brutCriticality' => 15,
-        'createdAt' => '2025-06-08'
-    ],
-    [
-        'id' => 4,
-        'code' => 'RISK-004',
-        'name' => 'Third-party Integration Failure',
-        'project_name' => 'E-commerce Platform',
-        'brutCriticality' => 16,
-        'createdAt' => '2025-06-07'
-    ],
-    [
-        'id' => 5,
-        'code' => 'RISK-005',
-        'name' => 'Regulatory Compliance Gap',
-        'project_name' => 'Financial System',
-        'brutCriticality' => 20,
-        'createdAt' => '2025-06-06'
-    ]
-];
+    // Get risk trends by month for current year
+    $current_year = date('Y');
+    $stmt = $conn->prepare("
+        SELECT 
+            MONTH(createdAt) as month,
+            CASE 
+                WHEN brutCriticality >= 18 THEN 'high'
+                WHEN brutCriticality >= 12 THEN 'medium'
+                ELSE 'low'
+            END as risk_level,
+            COUNT(*) as count
+        FROM Risk
+        WHERE YEAR(createdAt) = ? AND active = 1
+        GROUP BY MONTH(createdAt), 
+            CASE 
+                WHEN brutCriticality >= 18 THEN 'high'
+                WHEN brutCriticality >= 12 THEN 'medium'
+                ELSE 'low'
+            END
+        ORDER BY month");
+    $stmt->execute([$current_year]);
+
+    // Initialize months
+    $months = ['January', 'February', 'March', 'April', 'May', 'June'];
+    foreach ($months as $month) {
+        $risk_trends[$month] = ['high' => 0, 'medium' => 0, 'low' => 0];
+    }
+
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $month_name = date('F', mktime(0, 0, 0, $row['month'], 1));
+        if (in_array($month_name, $months)) {
+            $risk_trends[$month_name][$row['risk_level']] = intval($row['count']);
+        }
+    }
+
+    // Get risks by category
+    $stmt = $conn->query("
+        SELECT 
+            COALESCE(rf.name, 'Uncategorized') as category,
+            COUNT(*) as count
+        FROM Risk r
+        LEFT JOIN RiskFamily rf ON r.riskFamilyId = rf.id
+        WHERE r.active = 1
+        GROUP BY rf.name");
+
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $risk_by_category[$row['category']] = intval($row['count']);
+    }
+}
+
+// Fetch recent high priority risks from database
+$recent_risks = [];
+if ($conn) {
+    $stmt = $conn->query("SELECT r.id, r.code, r.name, p.name AS project_name, r.brutCriticality, r.createdAt FROM risk r LEFT JOIN project p ON r.activityId = p.id WHERE r.brutCriticality >= 15 ORDER BY r.createdAt DESC LIMIT 5");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $recent_risks[] = $row;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Risk Management Dashboard - RiskGuard Pro</title>
+    <title><?php echo __('Risk Management Dashboard'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -583,27 +615,27 @@ $recent_risks = [
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> Reports</a></li>
+                    <li><a href="index.php" class="active"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a></li>
+                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?></a></li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="Admin User">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="<?php echo __('Admin User'); ?>">
                 <div>
-                    <strong>Admin User</strong>
-                    <small>System Administrator</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -611,7 +643,7 @@ $recent_risks = [
         <div class="content">
             <header class="header">
                 <div class="header-left">
-                    <h1>Risk Management Dashboard</h1>
+                    <h1><?php echo __('Risk Management Dashboard'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -619,7 +651,7 @@ $recent_risks = [
                         <span class="badge"><?php echo $stats['high_priority_risks']; ?></span>
                     </div>
                     <a href="logout.php" class="btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <?php echo __('Logout'); ?>
                     </a>
                 </div>
             </header>
@@ -627,33 +659,33 @@ $recent_risks = [
             <main class="main-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Clients</h3>
+                        <h3><?php echo __('Total Clients'); ?></h3>
                         <div class="stat-value"><?php echo $stats['total_clients']; ?></div>
                         <div class="stat-change positive">
-                            <i class="fas fa-arrow-up"></i> Active organizations
+                            <i class="fas fa-arrow-up"></i> <?php echo __('Active organizations'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Active Projects</h3>
+                        <h3><?php echo __('Active Projects'); ?></h3>
                         <div class="stat-value"><?php echo $stats['active_projects']; ?></div>
                         <div class="stat-change positive">
-                            <i class="fas fa-arrow-up"></i> In progress
+                            <i class="fas fa-arrow-up"></i> <?php echo __('In progress'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Open Risks</h3>
+                        <h3><?php echo __('Open Risks'); ?></h3>
                         <div class="stat-value"><?php echo $stats['open_risks']; ?></div>
                         <div class="stat-change <?php echo $stats['open_risks'] > 0 ? 'negative' : 'positive'; ?>">
                             <i class="fas fa-<?php echo $stats['open_risks'] > 0 ? 'exclamation-triangle' : 'check'; ?>"></i> 
-                            <?php echo $stats['open_risks'] > 0 ? 'Requires attention' : 'All clear'; ?>
+                            <?php echo $stats['open_risks'] > 0 ? __('Requires attention') : __('All clear'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>High Priority</h3>
+                        <h3><?php echo __('High Priority'); ?></h3>
                         <div class="stat-value"><?php echo $stats['high_priority_risks']; ?></div>
                         <div class="stat-change <?php echo $stats['high_priority_risks'] > 0 ? 'negative' : 'positive'; ?>">
                             <i class="fas fa-<?php echo $stats['high_priority_risks'] > 0 ? 'arrow-up' : 'check'; ?>"></i> 
-                            <?php echo $stats['high_priority_risks'] > 0 ? 'Critical risks' : 'No critical risks'; ?>
+                            <?php echo $stats['high_priority_risks'] > 0 ? __('Critical risks') : __('No critical risks'); ?>
                         </div>
                     </div>
                 </div>
@@ -661,7 +693,7 @@ $recent_risks = [
                 <div class="charts-grid">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Risk Distribution by Criticality</h3>
+                            <h3 class="card-title"><?php echo __('Risk Distribution by Criticality'); ?></h3>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -671,7 +703,7 @@ $recent_risks = [
                     </div>
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">Risk Trend (Last 6 Months)</h3>
+                            <h3 class="card-title"><?php echo __('Risk Trend (Last 6 Months)'); ?></h3>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -684,22 +716,22 @@ $recent_risks = [
                 <?php if (!empty($recent_risks)): ?>
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Recent High Priority Risks</h3>
+                        <h3 class="card-title"><?php echo __('Recent High Priority Risks'); ?></h3>
                         <a href="risks.php" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> View All Risks
+                            <i class="fas fa-eye"></i> <?php echo __('View All Risks'); ?>
                         </a>
                     </div>
                     <div class="card-body">
                         <table class="table">
                             <thead>
                                 <tr>
-                                    <th>Risk ID</th>
-                                    <th>Risk Name</th>
-                                    <th>Project</th>
-                                    <th>Criticality</th>
-                                    <th>Status</th>
-                                    <th>Date Created</th>
-                                    <th>Actions</th>
+                                    <th><?php echo __('Risk ID'); ?></th>
+                                    <th><?php echo __('Risk Name'); ?></th>
+                                    <th><?php echo __('Project'); ?></th>
+                                    <th><?php echo __('Criticality'); ?></th>
+                                    <th><?php echo __('Status'); ?></th>
+                                    <th><?php echo __('Date Created'); ?></th>
+                                    <th><?php echo __('Actions'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -712,17 +744,17 @@ $recent_risks = [
                                         <?php 
                                         $criticality = $risk['brutCriticality'];
                                         $status_class = 'status-low';
-                                        $status_text = 'Low';
+                                        $status_text = __('Low');
                                         
                                         if ($criticality >= 20) {
                                             $status_class = 'status-critical';
-                                            $status_text = 'Critical';
+                                            $status_text = __('Critical');
                                         } elseif ($criticality >= 15) {
                                             $status_class = 'status-high';
-                                            $status_text = 'High';
+                                            $status_text = __('High');
                                         } elseif ($criticality >= 10) {
                                             $status_class = 'status-medium';
-                                            $status_text = 'Medium';
+                                            $status_text = __('Medium');
                                         }
                                         ?>
                                         <span class="status-badge <?php echo $status_class; ?>">
@@ -730,12 +762,12 @@ $recent_risks = [
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="status-badge status-open">Open</span>
+                                        <span class="status-badge status-open"><?php echo __('Open'); ?></span>
                                     </td>
                                     <td><?php echo date('M j, Y', strtotime($risk['createdAt'])); ?></td>
                                     <td>
                                         <a href="risk_details.php?id=<?php echo $risk['id']; ?>" class="btn btn-primary" style="padding: 6px 12px; font-size: 12px;">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
                                     </td>
                                 </tr>
@@ -747,13 +779,13 @@ $recent_risks = [
                 <?php else: ?>
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Recent High Priority Risks</h3>
+                        <h3 class="card-title"><?php echo __('Recent High Priority Risks'); ?></h3>
                     </div>
                     <div class="card-body">
                         <div class="empty-state">
                             <i class="fas fa-check-circle"></i>
-                            <h3>No High Priority Risks</h3>
-                            <p>Your system is running smoothly with no critical risks detected.</p>
+                            <h3><?php echo __('No High Priority Risks'); ?></h3>
+                            <p><?php echo __('Your system is running smoothly with no critical risks detected.'); ?></p>
                         </div>
                     </div>
                 </div>
@@ -796,84 +828,218 @@ $recent_risks = [
                 data: {
                     labels: ['Critical', 'High', 'Medium', 'Low'],
                     datasets: [{
-                        data: [5, 8, 10, 0],
-                        backgroundColor: [
-                            '#ef4444',
-                            '#f59e0b',
-                            '#10b981',
-                            '#64748b'
-                        ],
-                        borderWidth: 0,
-                        cutout: '60%'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                usePointStyle: true,
-                                font: {
-                                    size: 12,
-                                    weight: '600'
-                                }
-                            }
-                        }
+            data: [5, 8, 10, 0],
+            backgroundColor: [
+                '#ef4444',
+                '#f59e0b',
+                '#10b981',
+                '#64748b'
+            ],
+            borderWidth: 0,
+            cutout: '60%'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    font: {
+                        size: 12,
+                        weight: '600'
                     }
                 }
-            });
+            }
+        }
+    }
+});
+
+const riskDistCtx = document.getElementById('riskDistributionChart').getContext('2d');
+new Chart(riskDistCtx, {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys(riskByCategory),
+        datasets: [{
+            data: Object.values(riskByCategory),
+            backgroundColor: [
+                '#ef4444',
+                '#f59e0b',
+                '#10b981',
+                '#64748b',
+                '#2563eb',
+                '#3b82f6'
+            ],
+            borderWidth: 0,
+            cutout: '60%'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    font: {
+                        size: 12,
+                        weight: '600'
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Risk Trend Chart with dynamic data
+const riskTrendCtx = document.getElementById('riskTrendChart').getContext('2d');
+new Chart(riskTrendCtx, {
+    type: 'line',
+    data: {
+        labels: Object.keys(riskTrends),
+        datasets: [
+            {
+                label: 'High Risk',
+                data: Object.values(riskTrends).map(m => m.high),
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'Medium Risk',
+                data: Object.values(riskTrends).map(m => m.medium),
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            },
+            {
+                label: 'Low Risk',
+                data: Object.values(riskTrends).map(m => m.low),
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top',
+                labels: {
+                    color: '#334155',
+                    font: {
+                        weight: 600
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: '#ffffff',
+                titleColor: '#2563eb',
+                bodyColor: '#334155',
+                borderColor: '#e2e8f0',
+                borderWidth: 1,
+                padding: 10
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: '#e2e8f0'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
 
             // Risk Trend Chart
             const riskTrendCtx = document.getElementById('riskTrendChart').getContext('2d');
             new Chart(riskTrendCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-                    datasets: [{
-                        label: 'Open Risks',
-                        data: [15, 18, 22, 25, 28, 23],
-                        borderColor: '#2563eb',
-                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointBackgroundColor: '#2563eb',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 6
-                    }]
+                    labels: Object.keys(riskTrends),
+                    datasets: [
+                        {
+                            label: 'High Risk',
+                            data: Object.values(riskTrends).map(m => m.high),
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Medium Risk',
+                            data: Object.values(riskTrends).map(m => m.medium),
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Low Risk',
+                            data: Object.values(riskTrends).map(m => m.low),
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.4
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: '#334155',
+                                font: {
+                                    weight: 600
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#ffffff',
+                            titleColor: '#2563eb',
+                            bodyColor: '#334155',
+                            borderColor: '#e2e8f0',
+                            borderWidth: 1,
+                            padding: 10
                         }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                font: {
-                                    size: 12
-                                }
+                                color: '#e2e8f0'
                             }
                         },
                         x: {
                             grid: {
                                 display: false
-                            },
-                            ticks: {
-                                font: {
-                                    size: 12
-                                }
                             }
                         }
                     }

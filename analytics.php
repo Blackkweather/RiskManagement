@@ -1,110 +1,327 @@
 <?php
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
+require_once 'lang/translation.php';
+require_once 'config/database.php';
 
-// Sample analytics data for comprehensive dashboard
-$analytics_data = [
-    'risk_trends' => [
-        'January' => ['high' => 5, 'medium' => 12, 'low' => 8],
-        'February' => ['high' => 7, 'medium' => 15, 'low' => 6],
-        'March' => ['high' => 4, 'medium' => 18, 'low' => 9],
-        'April' => ['high' => 8, 'medium' => 14, 'low' => 7],
-        'May' => ['high' => 6, 'medium' => 16, 'low' => 11],
-        'June' => ['high' => 9, 'medium' => 13, 'low' => 5]
-    ],
-    'risk_by_category' => [
-        'Operational' => 15,
-        'Financial' => 8,
-        'Strategic' => 6,
-        'Compliance' => 12,
-        'Technology' => 10,
-        'Reputational' => 4
-    ],
-    'mitigation_effectiveness' => [
-        'Fully Mitigated' => 18,
-        'Partially Mitigated' => 22,
-        'Under Review' => 8,
-        'Not Mitigated' => 7
-    ],
-    'project_risk_distribution' => [
-        'Customer Portal' => ['risks' => 12, 'high_priority' => 3],
-        'Mobile Banking' => ['risks' => 8, 'high_priority' => 2],
-        'ERP Implementation' => ['risks' => 15, 'high_priority' => 4],
-        'E-commerce Platform' => ['risks' => 10, 'high_priority' => 2],
-        'Cloud Migration' => ['risks' => 6, 'high_priority' => 1]
-    ],
-    'control_effectiveness' => [
-        'Preventive' => 85,
-        'Detective' => 78,
-        'Corrective' => 92,
-        'Compensating' => 67
-    ],
-    'risk_velocity' => [
-        'Week 1' => 3,
-        'Week 2' => 5,
-        'Week 3' => 2,
-        'Week 4' => 7,
-        'Week 5' => 4,
-        'Week 6' => 6
-    ]
-];
+$risk_coverage = 0;  // Initialize risk_coverage to avoid undefined variable warning
+$avg_control_effectiveness = 0; // Initialize avg_control_effectiveness to avoid undefined variable warning
 
-// Calculate key metrics
-$total_risks = array_sum(array_column($analytics_data['project_risk_distribution'], 'risks'));
-$high_priority_risks = array_sum(array_column($analytics_data['project_risk_distribution'], 'high_priority'));
-$risk_coverage = round(($analytics_data['mitigation_effectiveness']['Fully Mitigated'] + $analytics_data['mitigation_effectiveness']['Partially Mitigated']) / array_sum($analytics_data['mitigation_effectiveness']) * 100, 1);
-$avg_control_effectiveness = round(array_sum($analytics_data['control_effectiveness']) / count($analytics_data['control_effectiveness']), 1);
+// Initialize all statistics variables
+$total_risks = 0;
+$high_risks = 0;
+$medium_risks = 0;
+$low_risks = 0;
+$total_entities = 0;
+$total_categories = 0;
+$total_controls = 0;
+$high_priority_risks = 0;  // Added for stats cards
 
-// Recent activities for timeline
-$recent_activities = [
+// Initialize arrays
+$risk_trends = [];
+$risk_by_category = [];
+$mitigation_effectiveness = [];
+$project_risk_distribution = [];
+$control_effectiveness = [];
+
+try {
+    $db = new Database();
+    $conn = $db->getConnection();
+    $current_year = date('Y');
+
+    if ($conn) {
+        // Calculate all risk statistics in one query
+        $statsQuery = "
+            SELECT 
+                COUNT(*) as total_risks,
+                SUM(CASE WHEN brutCriticality >= 18 THEN 1 ELSE 0 END) as high_risks,
+                SUM(CASE WHEN brutCriticality >= 12 AND brutCriticality < 18 THEN 1 ELSE 0 END) as medium_risks,
+                SUM(CASE WHEN brutCriticality < 12 THEN 1 ELSE 0 END) as low_risks,
+                COUNT(DISTINCT entityId) as total_entities,
+                COUNT(DISTINCT riskFamilyId) as total_categories,
+                SUM(CASE WHEN priority = 'high' OR brutCriticality >= 18 THEN 1 ELSE 0 END) as high_priority_risks
+            FROM Risk 
+            WHERE active = 1";
+        
+        if ($stmt = $conn->query($statsQuery)) {
+            $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+            $total_risks = intval($stats['total_risks']);
+            $high_risks = intval($stats['high_risks']);
+            $medium_risks = intval($stats['medium_risks']);
+            $low_risks = intval($stats['low_risks']);
+            $total_entities = intval($stats['total_entities']);
+            $total_categories = intval($stats['total_categories']);
+            $high_priority_risks = intval($stats['high_priority_risks']);  // Populate high priority risks
+        }
+
+        // Calculate risk coverage (percentage of risks with controls)
+        $risk_coverage_query = "
+            SELECT 
+                ROUND(
+                    (COUNT(DISTINCT CASE WHEN rc.controlId IS NOT NULL THEN r.id END) * 100.0) / 
+                    NULLIF(COUNT(DISTINCT r.id), 0)
+                ) as coverage_percentage,
+                COUNT(DISTINCT r.id) as total_risks,
+                COUNT(DISTINCT CASE WHEN rc.controlId IS NOT NULL THEN r.id END) as risks_with_controls
+            FROM Risk r
+            LEFT JOIN RiskControl rc ON r.id = rc.riskId
+            WHERE r.active = 1";
+        
+        if ($stmt = $conn->query($risk_coverage_query)) {
+            $coverage_result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $risk_coverage = $coverage_result['coverage_percentage'] ?? 0;
+            
+            // Debug output
+            error_log("Risk Coverage Debug:");
+            error_log("Total Risks: " . $coverage_result['total_risks']);
+            error_log("Risks with Controls: " . $coverage_result['risks_with_controls']);
+            error_log("Coverage Percentage: " . $risk_coverage);
+        } else {
+            $risk_coverage = 0;
+            error_log("Risk Coverage Query Failed: " . $conn->errorInfo()[2]);
+        }
+
+        // Calculate average control effectiveness
+        $effectiveness_query = "
+            SELECT 
+                ROUND(
+                    AVG(CASE 
+                        WHEN rc.effectiveness IS NOT NULL THEN rc.effectiveness 
+                        ELSE 0 
+                    END)
+                ) as avg_effectiveness,
+                COUNT(rc.effectiveness) as total_controls_with_effectiveness
+            FROM Risk r
+            LEFT JOIN RiskControl rc ON r.id = rc.riskId
+            WHERE r.active = 1";
+
+        if ($stmt = $conn->query($effectiveness_query)) {
+            $effectiveness_result = $stmt->fetch(PDO::FETCH_ASSOC);
+            $avg_control_effectiveness = $effectiveness_result['avg_effectiveness'] ?? 0;
+            
+            // Debug output
+            error_log("Control Effectiveness Debug:");
+            error_log("Total Controls with Effectiveness: " . $effectiveness_result['total_controls_with_effectiveness']);
+            error_log("Average Effectiveness: " . $avg_control_effectiveness);
+        } else {
+            $avg_control_effectiveness = 0;
+            error_log("Effectiveness Query Failed: " . $conn->errorInfo()[2]);
+        }
+            
+        // Get risk trends by month
+        $stmt = $conn->prepare("
+            SELECT 
+                MONTH(createdAt) as month,
+                CASE 
+                    WHEN brutCriticality >= 18 THEN 'high'
+                    WHEN brutCriticality >= 12 THEN 'medium'
+                    ELSE 'low'
+                END as risk_level,
+                COUNT(*) as count
+            FROM Risk
+            WHERE YEAR(createdAt) = ? AND active = 1
+            GROUP BY MONTH(createdAt), 
+                CASE 
+                    WHEN brutCriticality >= 18 THEN 'high'
+                    WHEN brutCriticality >= 12 THEN 'medium'
+                    ELSE 'low'
+                END
+            ORDER BY month");
+        
+        $stmt->execute([$current_year]);
+        
+        // Initialize months
+        $months = ['January', 'February', 'March', 'April', 'May', 'June'];
+        foreach ($months as $month) {
+            $risk_trends[$month] = ['high' => 0, 'medium' => 0, 'low' => 0];
+        }
+
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $month_name = date('F', mktime(0, 0, 0, $row['month'], 1));
+            if (in_array($month_name, $months)) {
+                $risk_trends[$month_name][$row['risk_level']] = intval($row['count']);
+            }
+        }
+
+        // Get risks by category
+        $stmt = $conn->query("
+            SELECT 
+                COALESCE(rf.name, 'Non catégorisé') as category,
+                COUNT(*) as count
+            FROM Risk r
+            LEFT JOIN RiskFamily rf ON r.riskFamilyId = rf.id
+            WHERE r.active = 1
+            GROUP BY rf.name");
+        
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $risk_by_category[$row['category']] = intval($row['count']);
+        }
+
+        // Get mitigation effectiveness
+        $stmt = $conn->query("
+            SELECT 
+                CASE 
+                    WHEN netCriticality <= brutCriticality * 0.3 THEN 'Entièrement Atténué'
+                    WHEN netCriticality <= brutCriticality * 0.6 THEN 'Partiellement Atténué'
+                    WHEN netCriticality <= brutCriticality * 0.8 THEN 'En Révision'
+                    ELSE 'Non Atténué'
+                END as effectiveness,
+                COUNT(*) as count
+            FROM Risk
+            WHERE active = 1
+            GROUP BY effectiveness");
+        
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $mitigation_effectiveness[$row['effectiveness']] = intval($row['count']);
+        }
+
+        // Get project risk distribution
+        $stmt = $conn->query("
+            SELECT 
+                p.name as project_name,
+                COUNT(r.id) as total_risks,
+                SUM(CASE WHEN r.brutCriticality >= 18 THEN 1 ELSE 0 END) as high_priority
+            FROM Project p
+            LEFT JOIN Entity e ON e.projectId = p.id
+            LEFT JOIN Risk r ON r.entityId = e.id
+            WHERE p.active = 1
+            GROUP BY p.id, p.name");
+        
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $project_risk_distribution[$row['project_name']] = [
+                'risks' => intval($row['total_risks']),
+                'high_priority' => intval($row['high_priority'])
+            ];
+        }
+
+        // Get control effectiveness
+        $stmt = $conn->query("
+            SELECT 
+                COUNT(*) as count
+            FROM RiskControl
+            WHERE active = 1");
+        
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $control_effectiveness['Préventif'] = intval($row['count']);
+
+        // Calculate total statistics
+        $stmt = $conn->query("
+            SELECT 
+                COUNT(*) as total_risks,
+                SUM(CASE WHEN brutCriticality >= 18 THEN 1 ELSE 0 END) as high_risks,
+                SUM(CASE WHEN brutCriticality >= 12 AND brutCriticality < 18 THEN 1 ELSE 0 END) as medium_risks,
+                SUM(CASE WHEN brutCriticality < 12 THEN 1 ELSE 0 END) as low_risks,
+                COUNT(DISTINCT entityId) as total_entities,
+                COUNT(DISTINCT riskFamilyId) as total_categories
+            FROM Risk 
+            WHERE active = 1");
+        
+        $stats = $stmt->fetch(PDO::FETCH_ASSOC);
+        $total_risks = intval($stats['total_risks']);
+        $high_risks = intval($stats['high_risks']);
+        $medium_risks = intval($stats['medium_risks']);
+        $low_risks = intval($stats['low_risks']);
+        $total_entities = intval($stats['total_entities']);
+        $total_categories = intval($stats['total_categories']);
+
+        // Get total controls
+        $stmt = $conn->query("SELECT COUNT(*) as total_controls FROM RiskControl WHERE active = 1");
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        $total_controls = intval($row['total_controls']);
+    }
+
+} catch (PDOException $e) {
+    error_log("Database Error: " . $e->getMessage());
+    $error_message = "Une erreur est survenue lors de la récupération des données.";
+}
+
+// Ensure all arrays are initialized with default values if empty
+if (empty($risk_by_category)) {
+    $risk_by_category = [
+        'Opérationnel' => 0,
+        'Financier' => 0,
+        'Stratégique' => 0,
+        'Conformité' => 0,
+        'Technologique' => 0,
+        'Réputationnel' => 0
+    ];
+}
+
+if (empty($mitigation_effectiveness)) {
+    $mitigation_effectiveness = [
+        'Entièrement Atténué' => 0,
+        'Partiellement Atténué' => 0,
+        'En Révision' => 0,
+        'Non Atténué' => 0
+    ];
+}
+
+if (empty($project_risk_distribution)) {
+    $project_risk_distribution = [
+        'Project 1' => ['risks' => 0, 'high_priority' => 0],
+        'Project 2' => ['risks' => 0, 'high_priority' => 0],
+        'Project 3' => ['risks' => 0, 'high_priority' => 0]
+    ];
+}
+
+if (empty($control_effectiveness)) {
+    $control_effectiveness = [
+        'Préventif' => 0,
+        'Détectif' => 0,
+        'Correctif' => 0
+    ];
+}
+
+// Fetch recent activities for timeline from database
+$recent_activities = [];
+if ($conn) {
+    try {
+        $stmt = $conn->query("SELECT type, title, description, timestamp, severity, user FROM recent_activities ORDER BY timestamp DESC LIMIT 5");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $recent_activities[] = $row;
+        }
+    } catch (PDOException $e) {
+        echo "Error fetching recent activities: " . $e->getMessage();
+    }
+}
+
+// Fallback to empty array if no data is fetched
+$recent_activities = !empty($recent_activities) ? $recent_activities : [
     [
-        'type' => 'risk_created',
-        'title' => 'New Risk Identified',
-        'description' => 'Data Security Vulnerability in Customer Portal',
-        'timestamp' => '2025-06-15 14:30',
-        'severity' => 'high',
-        'user' => 'John Doe'
-    ],
-    [
-        'type' => 'control_updated',
-        'title' => 'Control Effectiveness Updated',
-        'description' => 'Authentication controls effectiveness increased to 95%',
-        'timestamp' => '2025-06-15 11:15',
-        'severity' => 'medium',
-        'user' => 'Jane Smith'
-    ],
-    [
-        'type' => 'report_generated',
-        'title' => 'Monthly Report Generated',
-        'description' => 'Risk Assessment Report for May 2025 completed',
-        'timestamp' => '2025-06-14 16:45',
+        'type' => 'info',
+        'title' => 'No Recent Activity',
+        'description' => 'No recent activities found in the database.',
+        'timestamp' => date('Y-m-d H:i'),
         'severity' => 'low',
         'user' => 'System'
-    ],
-    [
-        'type' => 'risk_mitigated',
-        'title' => 'Risk Successfully Mitigated',
-        'description' => 'Budget overrun risk in Mobile Banking project resolved',
-        'timestamp' => '2025-06-14 09:20',
-        'severity' => 'medium',
-        'user' => 'Mike Johnson'
-    ],
-    [
-        'type' => 'audit_completed',
-        'title' => 'Compliance Audit Completed',
-        'description' => 'Q2 2025 compliance audit finished with 98% score',
-        'timestamp' => '2025-06-13 17:00',
-        'severity' => 'low',
-        'user' => 'External Auditor'
     ]
 ];
 
-// Top risks by criticality
-$top_risks = [
-    ['name' => 'Data Security Vulnerability', 'score' => 22, 'trend' => 'up'],
-    ['name' => 'Regulatory Compliance Gap', 'score' => 20, 'trend' => 'stable'],
-    ['name' => 'Budget Overrun Risk', 'score' => 18, 'trend' => 'down'],
-    ['name' => 'Third-party Integration Failure', 'score' => 16, 'trend' => 'up'],
-    ['name' => 'Key Personnel Unavailability', 'score' => 15, 'trend' => 'stable']
+// Top risks by criticality from database
+$top_risks = [];
+if ($conn) {
+    try {
+        $stmt = $conn->query("
+            SELECT name, brutCriticality as score, 'stable' as trend
+            FROM Risk
+            WHERE active = 1
+            ORDER BY brutCriticality DESC
+            LIMIT 5
+        ");
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $top_risks[] = $row;
+        }
+    } catch (PDOException $e) {
+        echo "Error fetching top risks: " . $e->getMessage();
+    }
+}
+
+// Fallback to empty array if no data is fetched
+$top_risks = !empty($top_risks) ? $top_risks : [
+    ['name' => 'No Data Available', 'score' => 0, 'trend' => 'stable']
 ];
 ?>
 <!DOCTYPE html>
@@ -788,14 +1005,14 @@ $top_risks = [
         <main>
             <header class="header">
                 <div class="header-left">
-                    <h1><i class="fas fa-chart-bar"></i> Analytics Dashboard</h1>
+                    <h1><i class="fas fa-chart-bar"></i> <?php echo __('Analytics'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="time-filter">
-                        <button class="active" data-period="7d">7D</button>
-                        <button data-period="30d">30D</button>
-                        <button data-period="90d">90D</button>
-                        <button data-period="1y">1Y</button>
+                        <button class="active" data-period="7d">7J</button>
+                        <button data-period="30d">30J</button>
+                        <button data-period="90d">90J</button>
+                        <button data-period="1y">1A</button>
                     </div>
                     <button class="refresh-btn" onclick="refreshData()">
                         <i class="fas fa-sync-alt"></i>
@@ -808,7 +1025,7 @@ $top_risks = [
                 <div class="kpi-grid">
                     <div class="kpi-card primary">
                         <div class="kpi-header">
-                            <div class="kpi-title">Total Risks</div>
+                            <div class="kpi-title"><?php echo __('Total Risks'); ?></div>
                             <div class="kpi-icon primary">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
@@ -816,13 +1033,13 @@ $top_risks = [
                         <div class="kpi-value"><?php echo $total_risks; ?></div>
                         <div class="kpi-change positive">
                             <i class="fas fa-arrow-up"></i>
-                            <span>+12% from last month</span>
+                            <span>+12% par rapport au mois dernier</span>
                         </div>
                     </div>
                     
                     <div class="kpi-card danger">
                         <div class="kpi-header">
-                            <div class="kpi-title">High Priority</div>
+                            <div class="kpi-title"><?php echo __('High Priority'); ?></div>
                             <div class="kpi-icon danger">
                                 <i class="fas fa-fire"></i>
                             </div>
@@ -830,13 +1047,13 @@ $top_risks = [
                         <div class="kpi-value"><?php echo $high_priority_risks; ?></div>
                         <div class="kpi-change negative">
                             <i class="fas fa-arrow-down"></i>
-                            <span>-8% from last month</span>
+                            <span>-8% par rapport au mois dernier</span>
                         </div>
                     </div>
                     
                     <div class="kpi-card success">
                         <div class="kpi-header">
-                            <div class="kpi-title">Risk Coverage</div>
+                            <div class="kpi-title">Couverture des Risques</div>
                             <div class="kpi-icon success">
                                 <i class="fas fa-shield-check"></i>
                             </div>
@@ -844,13 +1061,13 @@ $top_risks = [
                         <div class="kpi-value"><?php echo $risk_coverage; ?>%</div>
                         <div class="kpi-change positive">
                             <i class="fas fa-arrow-up"></i>
-                            <span>+5% from last month</span>
+                            <span>+5% par rapport au mois dernier</span>
                         </div>
                     </div>
                     
                     <div class="kpi-card warning">
                         <div class="kpi-header">
-                            <div class="kpi-title">Control Effectiveness</div>
+                            <div class="kpi-title"><?php echo __('Effectiveness'); ?></div>
                             <div class="kpi-icon warning">
                                 <i class="fas fa-cogs"></i>
                             </div>
@@ -858,7 +1075,7 @@ $top_risks = [
                         <div class="kpi-value"><?php echo $avg_control_effectiveness; ?>%</div>
                         <div class="kpi-change positive">
                             <i class="fas fa-arrow-up"></i>
-                            <span>+3% from last month</span>
+                            <span>+3% par rapport au mois dernier</span>
                         </div>
                     </div>
                 </div>
@@ -867,7 +1084,7 @@ $top_risks = [
                 <div class="charts-grid">
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Risk Trends Over Time</div>
+                            <div class="card-title">Tendances des Risques dans le Temps</div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -878,7 +1095,7 @@ $top_risks = [
                     
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Recent Activities</div>
+                            <div class="card-title">Activités Récentes</div>
                         </div>
                         <div class="card-body">
                             <div class="activity-timeline">
@@ -887,12 +1104,12 @@ $top_risks = [
                                     <div class="activity-icon <?php echo $activity['severity']; ?>">
                                         <i class="fas fa-<?php 
                                             switch($activity['type']) {
-                                                case 'risk_created': echo 'plus';
-                                                case 'control_updated': echo 'edit';
-                                                case 'report_generated': echo 'file-alt';
-                                                case 'risk_mitigated': echo 'check';
-                                                case 'audit_completed': echo 'clipboard-check';
-                                                default: echo 'info';
+                                                case 'risk_created': echo 'plus'; break;
+                                                case 'control_updated': echo 'edit'; break;
+                                                case 'report_generated': echo 'file-alt'; break;
+                                                case 'risk_mitigated': echo 'check'; break;
+                                                case 'audit_completed': echo 'clipboard-check'; break;
+                                                default: echo 'info'; break;
                                             }
                                         ?>"></i>
                                     </div>
@@ -915,7 +1132,7 @@ $top_risks = [
                 <div class="charts-row">
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Risk Distribution by Category</div>
+                            <div class="card-title">Distribution des Risques par Catégorie</div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container small">
@@ -926,7 +1143,7 @@ $top_risks = [
                     
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Mitigation Status</div>
+                            <div class="card-title">État de l'Atténuation</div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container small">
@@ -940,7 +1157,7 @@ $top_risks = [
                 <div class="charts-row">
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Top Risks by Criticality</div>
+                            <div class="card-title">Principaux Risques par Criticité</div>
                         </div>
                         <div class="card-body">
                             <div class="risk-list">
@@ -967,11 +1184,11 @@ $top_risks = [
                     
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Control Effectiveness by Type</div>
+                            <div class="card-title">Efficacité des Contrôles par Type</div>
                         </div>
                         <div class="card-body">
                             <div class="progress-list">
-                                <?php foreach ($analytics_data['control_effectiveness'] as $type => $effectiveness): ?>
+                                <?php foreach ($control_effectiveness as $type => $effectiveness): ?>
                                 <div class="progress-item">
                                     <div class="progress-header">
                                         <div class="progress-label"><?php echo $type; ?></div>
@@ -998,41 +1215,36 @@ $top_risks = [
 
         // Risk Trends Chart
         const trendsCtx = document.getElementById('riskTrendsChart').getContext('2d');
-        const months = Object.keys(riskTrends);
-        const highRisks = months.map(month => riskTrends[month].high);
-        const mediumRisks = months.map(month => riskTrends[month].medium);
-        const lowRisks = months.map(month => riskTrends[month].low);
-
-        new Chart(trendsCtx, {
+        const riskTrendsChart = new Chart(trendsCtx, {
             type: 'line',
             data: {
-                labels: months,
+                labels: Object.keys(riskTrends),
                 datasets: [
                     {
                         label: 'High Risk',
-                        data: highRisks,
+                        data: Object.values(riskTrends).map(m => m.high),
                         borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                        borderWidth: 3,
-                        fill: false,
+                        backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
                         tension: 0.4
                     },
                     {
                         label: 'Medium Risk',
-                        data: mediumRisks,
+                        data: Object.values(riskTrends).map(m => m.medium),
                         borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                        borderWidth: 3,
-                        fill: false,
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
                         tension: 0.4
                     },
                     {
                         label: 'Low Risk',
-                        data: lowRisks,
+                        data: Object.values(riskTrends).map(m => m.low),
                         borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        fill: false,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        borderWidth: 2,
+                        fill: true,
                         tension: 0.4
                     }
                 ]
@@ -1042,79 +1254,22 @@ $top_risks = [
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: '#e2e8f0'
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#334155',
+                            font: {
+                                weight: 600
+                            }
                         }
                     },
-                    x: {
-                        grid: {
-                            color: '#e2e8f0'
-                        }
-                    }
-                }
-            }
-        });
-
-        // Category Chart
-        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-        new Chart(categoryCtx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(riskByCategory),
-                datasets: [{
-                    data: Object.values(riskByCategory),
-                    backgroundColor: [
-                        '#3b82f6',
-                        '#ef4444',
-                        '#10b981',
-                        '#f59e0b',
-                        '#8b5cf6',
-                        '#06b6d4'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-
-        // Mitigation Chart
-        const mitigationCtx = document.getElementById('mitigationChart').getContext('2d');
-        new Chart(mitigationCtx, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(mitigationEffectiveness),
-                datasets: [{
-                    data: Object.values(mitigationEffectiveness),
-                    backgroundColor: [
-                        '#10b981',
-                        '#f59e0b',
-                        '#3b82f6',
-                        '#ef4444'
-                    ],
-                    borderRadius: 6,
-                    borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
+                    tooltip: {
+                        backgroundColor: '#ffffff',
+                        titleColor: '#2563eb',
+                        bodyColor: '#334155',
+                        borderColor: '#e2e8f0',
+                        borderWidth: 1,
+                        padding: 10
                     }
                 },
                 scales: {
@@ -1173,4 +1328,3 @@ $top_risks = [
     </script>
 </body>
 </html>
-

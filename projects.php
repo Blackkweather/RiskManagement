@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'lang/translation.php';
 
 // Sample project data for demonstration
 $projects = [
@@ -87,7 +88,7 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projects Management - RiskGuard Pro</title>
+    <title><?php echo __('Projects Management'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -643,27 +644,27 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php" class="active"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> Reports</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php" class="active"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a></li>
+                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?></a></li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="Admin User">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="<?php echo __('Admin User'); ?>">
                 <div>
-                    <strong>Admin User</strong>
-                    <small>System Administrator</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -671,7 +672,7 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
         <div class="content">
             <header class="header">
                 <div class="header-left">
-                    <h1>Projects Management</h1>
+                    <h1><?php echo __('Projects Management'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -679,7 +680,7 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
                         <span class="badge">5</span>
                     </div>
                     <a href="logout.php" class="btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <?php echo __('Logout'); ?>
                     </a>
                 </div>
             </header>
@@ -687,56 +688,56 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
             <main class="main-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Projects</h3>
+                        <h3><?php echo __('Total Projects'); ?></h3>
                         <div class="stat-value"><?php echo $total_projects; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-project-diagram"></i> All projects
+                            <i class="fas fa-project-diagram"></i> <?php echo __('All projects'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Active Projects</h3>
+                        <h3><?php echo __('Active Projects'); ?></h3>
                         <div class="stat-value"><?php echo $active_projects; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-play-circle"></i> In progress
+                            <i class="fas fa-play-circle"></i> <?php echo __('In progress'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Completed</h3>
+                        <h3><?php echo __('Completed'); ?></h3>
                         <div class="stat-value"><?php echo $completed_projects; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-check-circle"></i> Finished
+                            <i class="fas fa-check-circle"></i> <?php echo __('Finished'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Risks</h3>
+                        <h3><?php echo __('Total Risks'); ?></h3>
                         <div class="stat-value"><?php echo $total_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-exclamation-triangle"></i> Across projects
+                            <i class="fas fa-exclamation-triangle"></i> <?php echo __('Across projects'); ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Project Portfolio</h3>
-<a href="add_project.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add New Project
+                        <h3 class="card-title"><?php echo __('Project Portfolio'); ?></h3>
+                        <a href="add_project.php" class="btn btn-success">
+                            <i class="fas fa-plus"></i> <?php echo __('Add New Project'); ?>
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="search-filter">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search projects..." id="searchInput">
+                                <input type="text" placeholder="<?php echo __('Search projects...'); ?>" id="searchInput">
                             </div>
                             <select class="filter-select" id="statusFilter">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="completed">Completed</option>
-                                <option value="inactive">Inactive</option>
+                                <option value=""><?php echo __('All Status'); ?></option>
+                                <option value="active"><?php echo __('Active'); ?></option>
+                                <option value="completed"><?php echo __('Completed'); ?></option>
+                                <option value="inactive"><?php echo __('Inactive'); ?></option>
                             </select>
                             <select class="filter-select" id="clientFilter">
-                                <option value="">All Clients</option>
+                                <option value=""><?php echo __('All Clients'); ?></option>
                                 <option value="TechCorp Solutions">TechCorp Solutions</option>
                                 <option value="Global Finance Inc">Global Finance Inc</option>
                                 <option value="Manufacturing Pro">Manufacturing Pro</option>
@@ -748,16 +749,16 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
                         <table class="table" id="projectsTable">
                             <thead>
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>Status</th>
-                                    <th>Progress</th>
-                                    <th>Entities</th>
-                                    <th>Processes</th>
-                                    <th>Risks</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <th><?php echo __('Code'); ?></th>
+                                    <th><?php echo __('Project Name'); ?></th>
+                                    <th><?php echo __('Client'); ?></th>
+                                    <th><?php echo __('Status'); ?></th>
+                                    <th><?php echo __('Progress'); ?></th>
+                                    <th><?php echo __('Entities'); ?></th>
+                                    <th><?php echo __('Processes'); ?></th>
+                                    <th><?php echo __('Risks'); ?></th>
+                                    <th><?php echo __('Created'); ?></th>
+                                    <th><?php echo __('Actions'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -769,14 +770,14 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
                                     <td>
                                         <?php 
                                         $status_class = 'status-inactive';
-                                        $status_text = 'Inactive';
+                                        $status_text = __('Inactive');
                                         
                                         if ($project['completion'] == 100) {
                                             $status_class = 'status-completed';
-                                            $status_text = 'Completed';
+                                            $status_text = __('Completed');
                                         } elseif ($project['active']) {
                                             $status_class = 'status-active';
-                                            $status_text = 'Active';
+                                            $status_text = __('Active');
                                         }
                                         ?>
                                         <span class="status-badge <?php echo $status_class; ?>">
@@ -795,10 +796,10 @@ $total_risks = array_sum(array_column($projects, 'risks_count'));
                                     <td><?php echo date('M j, Y', strtotime($project['createdAt'])); ?></td>
                                     <td>
                                         <a href="project_details.php?id=<?php echo $project['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
                                         <a href="project_edit.php?id=<?php echo $project['id']; ?>" class="btn btn-primary btn-sm" style="background: var(--warning);">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="fas fa-edit"></i> <?php echo __('Edit'); ?>
                                         </a>
                                     </td>
                                 </tr>

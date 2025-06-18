@@ -1,161 +1,55 @@
 <?php
 session_start();
+require_once 'lang/translation.php';
+require_once 'config/database.php';
 
-// Sample risk data for demonstration
-$risks = [
-    [
-        'id' => 1,
-        'name' => 'Data Security Vulnerability',
-        'code' => 'RISK-001',
-        'description' => 'Potential unauthorized access to customer data through API vulnerabilities',
-        'cause' => 'Insufficient input validation and authentication mechanisms',
-        'frequency' => 3,
-        'financialImpact' => 4,
-        'legalImpact' => 5,
-        'reputationImpact' => 5,
-        'activityImpact' => 3,
-        'peopleImpact' => 2,
-        'brutCriticality' => 22,
-        'netCriticality' => 18,
-        'active' => true,
-        'activity_name' => 'User Authentication',
-        'entity_name' => 'IT Department',
-        'project_name' => 'Customer Portal Redesign',
-        'createdAt' => '2025-06-10'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Budget Overrun Risk',
-        'code' => 'RISK-002',
-        'description' => 'Project costs exceeding allocated budget due to scope creep',
-        'cause' => 'Inadequate project planning and change management processes',
-        'frequency' => 4,
-        'financialImpact' => 5,
-        'legalImpact' => 1,
-        'reputationImpact' => 3,
-        'activityImpact' => 4,
-        'peopleImpact' => 2,
-        'brutCriticality' => 19,
-        'netCriticality' => 15,
-        'active' => true,
-        'activity_name' => 'Project Management',
-        'entity_name' => 'Development Team',
-        'project_name' => 'Mobile Banking App',
-        'createdAt' => '2025-06-09'
-    ],
-    [
-        'id' => 3,
-        'name' => 'Key Personnel Unavailability',
-        'code' => 'RISK-003',
-        'description' => 'Critical team members becoming unavailable during project execution',
-        'cause' => 'Lack of knowledge transfer and backup resources',
-        'frequency' => 2,
-        'financialImpact' => 3,
-        'legalImpact' => 1,
-        'reputationImpact' => 2,
-        'activityImpact' => 5,
-        'peopleImpact' => 4,
-        'brutCriticality' => 17,
-        'netCriticality' => 14,
-        'active' => true,
-        'activity_name' => 'Resource Management',
-        'entity_name' => 'Operations',
-        'project_name' => 'ERP System Implementation',
-        'createdAt' => '2025-06-08'
-    ],
-    [
-        'id' => 4,
-        'name' => 'Third-party Integration Failure',
-        'code' => 'RISK-004',
-        'description' => 'External service dependencies causing system failures',
-        'cause' => 'Insufficient testing of third-party integrations',
-        'frequency' => 3,
-        'financialImpact' => 3,
-        'legalImpact' => 2,
-        'reputationImpact' => 4,
-        'activityImpact' => 4,
-        'peopleImpact' => 1,
-        'brutCriticality' => 17,
-        'netCriticality' => 13,
-        'active' => true,
-        'activity_name' => 'System Integration',
-        'entity_name' => 'Development Team',
-        'project_name' => 'E-commerce Platform',
-        'createdAt' => '2025-06-07'
-    ],
-    [
-        'id' => 5,
-        'name' => 'Regulatory Compliance Gap',
-        'code' => 'RISK-005',
-        'description' => 'Non-compliance with financial regulations and standards',
-        'cause' => 'Inadequate understanding of regulatory requirements',
-        'frequency' => 2,
-        'financialImpact' => 4,
-        'legalImpact' => 5,
-        'reputationImpact' => 5,
-        'activityImpact' => 3,
-        'peopleImpact' => 2,
-        'brutCriticality' => 21,
-        'netCriticality' => 17,
-        'active' => true,
-        'activity_name' => 'Compliance Monitoring',
-        'entity_name' => 'Compliance',
-        'project_name' => 'Mobile Banking App',
-        'createdAt' => '2025-06-06'
-    ],
-    [
-        'id' => 6,
-        'name' => 'System Performance Degradation',
-        'code' => 'RISK-006',
-        'description' => 'Application performance issues under high load conditions',
-        'cause' => 'Insufficient load testing and optimization',
-        'frequency' => 3,
-        'financialImpact' => 2,
-        'legalImpact' => 1,
-        'reputationImpact' => 3,
-        'activityImpact' => 4,
-        'peopleImpact' => 1,
-        'brutCriticality' => 14,
-        'netCriticality' => 11,
-        'active' => true,
-        'activity_name' => 'Performance Testing',
-        'entity_name' => 'QA Team',
-        'project_name' => 'Customer Portal Redesign',
-        'createdAt' => '2025-06-05'
-    ],
-    [
-        'id' => 7,
-        'name' => 'Data Migration Error',
-        'code' => 'RISK-007',
-        'description' => 'Data corruption or loss during system migration',
-        'cause' => 'Inadequate backup and validation procedures',
-        'frequency' => 2,
-        'financialImpact' => 4,
-        'legalImpact' => 3,
-        'reputationImpact' => 4,
-        'activityImpact' => 5,
-        'peopleImpact' => 2,
-        'brutCriticality' => 20,
-        'netCriticality' => 16,
-        'active' => false,
-        'activity_name' => 'Data Migration',
-        'entity_name' => 'Operations',
-        'project_name' => 'ERP System Implementation',
-        'createdAt' => '2025-06-04'
-    ]
-];
+// Initialize database connection
+$database = new Database();
+$db = $database->getConnection();
 
-$total_risks = count($risks);
-$active_risks = count(array_filter($risks, function($risk) { return $risk['active']; }));
-$critical_risks = count(array_filter($risks, function($risk) { return $risk['brutCriticality'] >= 20; }));
-$high_risks = count(array_filter($risks, function($risk) { return $risk['brutCriticality'] >= 15 && $risk['brutCriticality'] < 20; }));
+// Initialize variables
+$risks = [];
+$total_risks = 0;
+$active_risks = 0;
+$critical_risks = 0;
+$high_risks = 0;
+
+// Fetch risks from database
+if ($db) {
+    try {
+        $query = "SELECT r.*, 
+                         a.name as activity_name, 
+                         e.name as entity_name,
+                         p.name as project_name,
+                         r.createdAt
+                  FROM risk r
+                  LEFT JOIN activity a ON r.activityId = a.id
+                  LEFT JOIN entity e ON r.entityId = e.id
+                  LEFT JOIN project p ON e.projectId = p.id
+                  ORDER BY r.riskScore DESC, r.createdAt DESC";
+        
+        $stmt = $db->prepare($query);
+        $stmt->execute();
+        $risks = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Calculate statistics
+        $total_risks = count($risks);
+        $active_risks = count(array_filter($risks, function($risk) { return $risk['active']; }));
+        $critical_risks = count(array_filter($risks, function($risk) { return $risk['riskScore'] >= 20; }));
+        $high_risks = count(array_filter($risks, function($risk) { return $risk['riskScore'] >= 15 && $risk['riskScore'] < 20; }));
+        
+    } catch (PDOException $e) {
+        error_log("Database error: " . $e->getMessage());
+        // Keep default values if database fails
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Risks Management - RiskGuard Pro</title>
+    <title><?php echo __('Risks Management'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -713,27 +607,27 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php" class="active"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> Reports</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php" class="active"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a></li>
+                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?></a></li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="Admin User">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="<?php echo __('Admin User'); ?>">
                 <div>
-                    <strong>Admin User</strong>
-                    <small>System Administrator</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -741,7 +635,7 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
         <div class="content">
             <header class="header">
                 <div class="header-left">
-                    <h1>Risks Management</h1>
+                    <h1><?php echo __('Risks Management'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -749,7 +643,7 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
                         <span class="badge"><?php echo $critical_risks; ?></span>
                     </div>
                     <a href="logout.php" class="btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <?php echo __('Logout'); ?>
                     </a>
                 </div>
             </header>
@@ -757,62 +651,62 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
             <main class="main-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Risks</h3>
+                        <h3><?php echo __('Total Risks'); ?></h3>
                         <div class="stat-value"><?php echo $total_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-exclamation-triangle"></i> All risks
+                            <i class="fas fa-exclamation-triangle"></i> <?php echo __('All risks'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Active Risks</h3>
+                        <h3><?php echo __('Active Risks'); ?></h3>
                         <div class="stat-value"><?php echo $active_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-eye"></i> Being monitored
+                            <i class="fas fa-eye"></i> <?php echo __('Being monitored'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Critical Risks</h3>
+                        <h3><?php echo __('Critical Risks'); ?></h3>
                         <div class="stat-value"><?php echo $critical_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-fire"></i> Immediate attention
+                            <i class="fas fa-fire"></i> <?php echo __('Immediate attention'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>High Risks</h3>
+                        <h3><?php echo __('High Risks'); ?></h3>
                         <div class="stat-value"><?php echo $high_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-warning"></i> Priority monitoring
+                            <i class="fas fa-warning"></i> <?php echo __('Priority monitoring'); ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Risk Register</h3>
-                        <a href="risk_add.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add New Risk
+                        <h3 class="card-title"><?php echo __('Risk Register'); ?></h3>
+                        <a href="add_risk.php" class="btn btn-success">
+                            <i class="fas fa-plus"></i> <?php echo __('Add New Risk'); ?>
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="search-filter">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search risks..." id="searchInput">
+                                <input type="text" placeholder="<?php echo __('Search risks...'); ?>" id="searchInput">
                             </div>
                             <select class="filter-select" id="criticalityFilter">
-                                <option value="">All Criticality</option>
-                                <option value="critical">Critical (≥20)</option>
-                                <option value="high">High (15-19)</option>
-                                <option value="medium">Medium (10-14)</option>
-                                <option value="low">Low (<10)</option>
+                                <option value=""><?php echo __('All Criticality'); ?></option>
+                                <option value="critical"><?php echo __('Critical'); ?> (≥20)</option>
+                                <option value="high"><?php echo __('High'); ?> (15-19)</option>
+                                <option value="medium"><?php echo __('Medium'); ?> (10-14)</option>
+                                <option value="low"><?php echo __('Low'); ?> (<10)</option>
                             </select>
                             <select class="filter-select" id="statusFilter">
-                                <option value="">All Status</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value=""><?php echo __('All Status'); ?></option>
+                                <option value="active"><?php echo __('Active'); ?></option>
+                                <option value="inactive"><?php echo __('Inactive'); ?></option>
                             </select>
                             <select class="filter-select" id="projectFilter">
-                                <option value="">All Projects</option>
+                                <option value=""><?php echo __('All Projects'); ?></option>
                                 <option value="Customer Portal Redesign">Customer Portal Redesign</option>
                                 <option value="Mobile Banking App">Mobile Banking App</option>
                                 <option value="ERP System Implementation">ERP System Implementation</option>
@@ -823,15 +717,15 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
                         <table class="table" id="risksTable">
                             <thead>
                                 <tr>
-                                    <th>Risk ID</th>
-                                    <th>Risk Name</th>
-                                    <th>Project</th>
-                                    <th>Entity</th>
-                                    <th>Brut Criticality</th>
-                                    <th>Net Criticality</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <th><?php echo __('Risk ID'); ?></th>
+                                    <th><?php echo __('Risk Name'); ?></th>
+                                    <th><?php echo __('Project'); ?></th>
+                                    <th><?php echo __('Entity'); ?></th>
+                                    <th><?php echo __('Brut Criticality'); ?></th>
+                                    <th><?php echo __('Net Criticality'); ?></th>
+                                    <th><?php echo __('Status'); ?></th>
+                                    <th><?php echo __('Created'); ?></th>
+                                    <th><?php echo __('Actions'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -856,13 +750,15 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
                                         
                                         if ($brutCriticality >= 20) {
                                             $status_class = 'status-critical';
-                                            $status_text = 'Critical';
+                                            $status_text = __('Critical');
                                         } elseif ($brutCriticality >= 15) {
                                             $status_class = 'status-high';
-                                            $status_text = 'High';
+                                            $status_text = __('High');
                                         } elseif ($brutCriticality >= 10) {
                                             $status_class = 'status-medium';
-                                            $status_text = 'Medium';
+                                            $status_text = __('Medium');
+                                        } else {
+                                            $status_text = __('Low');
                                         }
                                         ?>
                                         <span class="status-badge <?php echo $status_class; ?>">
@@ -877,13 +773,15 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
                                         
                                         if ($netCriticality >= 20) {
                                             $net_status_class = 'status-critical';
-                                            $net_status_text = 'Critical';
+                                            $net_status_text = __('Critical');
                                         } elseif ($netCriticality >= 15) {
                                             $net_status_class = 'status-high';
-                                            $net_status_text = 'High';
+                                            $net_status_text = __('High');
                                         } elseif ($netCriticality >= 10) {
                                             $net_status_class = 'status-medium';
-                                            $net_status_text = 'Medium';
+                                            $net_status_text = __('Medium');
+                                        } else {
+                                            $net_status_text = __('Low');
                                         }
                                         ?>
                                         <span class="status-badge <?php echo $net_status_class; ?>">
@@ -892,16 +790,16 @@ $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCri
                                     </td>
                                     <td>
                                         <span class="status-badge <?php echo $risk['active'] ? 'status-active' : 'status-inactive'; ?>">
-                                            <?php echo $risk['active'] ? 'Active' : 'Inactive'; ?>
+                                            <?php echo $risk['active'] ? __('Active') : __('Inactive'); ?>
                                         </span>
                                     </td>
                                     <td><?php echo date('M j, Y', strtotime($risk['createdAt'])); ?></td>
                                     <td>
                                         <a href="risk_details.php?id=<?php echo $risk['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
                                         <a href="risk_edit.php?id=<?php echo $risk['id']; ?>" class="btn btn-primary btn-sm" style="background: var(--warning);">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="fas fa-edit"></i> <?php echo __('Edit'); ?>
                                         </a>
                                     </td>
                                 </tr>

@@ -1,89 +1,30 @@
 <?php
-session_start();
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
-// Sample risk data for matrix visualization
-$risks = [
-    [
-        'id' => 1,
-        'name' => 'Data Security Vulnerability',
-        'code' => 'RISK-001',
-        'frequency' => 3,
-        'avgImpact' => 4.2,
-        'brutCriticality' => 22,
-        'project_name' => 'Customer Portal',
-        'status' => 'Active'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Budget Overrun Risk',
-        'code' => 'RISK-002',
-        'frequency' => 4,
-        'avgImpact' => 3.8,
-        'brutCriticality' => 18,
-        'project_name' => 'Mobile Application',
-        'status' => 'Active'
-    ],
-    [
-        'id' => 3,
-        'name' => 'Key Personnel Unavailability',
-        'code' => 'RISK-003',
-        'frequency' => 2,
-        'avgImpact' => 3.4,
-        'brutCriticality' => 15,
-        'project_name' => 'Data Migration',
-        'status' => 'Active'
-    ],
-    [
-        'id' => 4,
-        'name' => 'Third-party Integration Failure',
-        'code' => 'RISK-004',
-        'frequency' => 3,
-        'avgImpact' => 3.2,
-        'brutCriticality' => 16,
-        'project_name' => 'E-commerce Platform',
-        'status' => 'Active'
-    ],
-    [
-        'id' => 5,
-        'name' => 'Regulatory Compliance Gap',
-        'code' => 'RISK-005',
-        'frequency' => 2,
-        'avgImpact' => 4.6,
-        'brutCriticality' => 20,
-        'project_name' => 'Financial System',
-        'status' => 'Active'
-    ],
-    [
-        'id' => 6,
-        'name' => 'System Performance Degradation',
-        'code' => 'RISK-006',
-        'frequency' => 4,
-        'avgImpact' => 2.8,
-        'brutCriticality' => 12,
-        'project_name' => 'Infrastructure Upgrade',
-        'status' => 'Active'
-    ],
-    [
-        'id' => 7,
-        'name' => 'Vendor Dependency Risk',
-        'code' => 'RISK-007',
-        'frequency' => 2,
-        'avgImpact' => 3.6,
-        'brutCriticality' => 14,
-        'project_name' => 'Cloud Migration',
-        'status' => 'Active'
-    ],
-    [
-        'id' => 8,
-        'name' => 'Data Loss Risk',
-        'code' => 'RISK-008',
-        'frequency' => 1,
-        'avgImpact' => 4.8,
-        'brutCriticality' => 19,
-        'project_name' => 'Backup System',
-        'status' => 'Active'
-    ]
-];
+session_start();
+require_once 'lang/translation.php';
+
+// Include database connection
+require_once 'config/database.php';
+$db = new Database();
+$conn = $db->getConnection();
+
+// Fetch risks from database with project names
+$risks = [];
+if ($conn) {
+    $stmt = $conn->query("SELECT r.*, 
+                                p.name as project_name,
+                                (r.financialImpact + r.legalImpact + r.reputationImpact + r.activityImpact + r.peopleImpact) / 5.0 as avgImpact
+                         FROM Risk r 
+                         LEFT JOIN Entity e ON r.entityId = e.id
+                         LEFT JOIN Project p ON e.projectId = p.id
+                         WHERE r.active = 1");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $risks[] = $row;
+    }
+}
 
 $total_risks = count($risks);
 $high_risks = count(array_filter($risks, function($risk) { return $risk['brutCriticality'] >= 18; }));
@@ -95,7 +36,7 @@ $low_risks = count(array_filter($risks, function($risk) { return $risk['brutCrit
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Risk Matrix - RiskGuard Pro</title>
+<title><?php echo __('Risk Matrix'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -733,11 +674,11 @@ $low_risks = count(array_filter($risks, function($risk) { return $risk['brutCrit
         <main>
             <header class="header">
                 <div class="header-left">
-                    <h1><i class="fas fa-th"></i> Risk Matrix</h1>
+                    <h1><i class="fas fa-th"></i> <?php echo __('Risk Matrix'); ?></h1>
                 </div>
                 <div class="header-right">
                     <a href="add_risk.php" class="btn">
-                        <i class="fas fa-plus"></i> Add Risk
+                        <i class="fas fa-plus"></i> <?php echo __('Add New Risk'); ?>
                     </a>
                 </div>
             </header>
@@ -746,19 +687,19 @@ $low_risks = count(array_filter($risks, function($risk) { return $risk['brutCrit
                 <!-- Stats Cards -->
                 <div class="stats-grid">
                     <div class="stat-card total">
-                        <h3>Total Risks</h3>
+                        <h3><?php echo __('Total Risks'); ?></h3>
                         <div class="stat-value"><?php echo $total_risks; ?></div>
                     </div>
                     <div class="stat-card high">
-                        <h3>High Risk</h3>
+                        <h3><?php echo __('High Risk'); ?></h3>
                         <div class="stat-value"><?php echo $high_risks; ?></div>
                     </div>
                     <div class="stat-card medium">
-                        <h3>Medium Risk</h3>
+                        <h3><?php echo __('Medium Risk'); ?></h3>
                         <div class="stat-value"><?php echo $medium_risks; ?></div>
                     </div>
                     <div class="stat-card low">
-                        <h3>Low Risk</h3>
+                        <h3><?php echo __('Low Risk'); ?></h3>
                         <div class="stat-value"><?php echo $low_risks; ?></div>
                     </div>
                 </div>
@@ -766,48 +707,48 @@ $low_risks = count(array_filter($risks, function($risk) { return $risk['brutCrit
                 <!-- Risk Matrix -->
                 <div class="matrix-container">
                     <div class="matrix-header">
-                        <div class="matrix-title">Risk Probability vs Impact Matrix</div>
+                        <div class="matrix-title">Matrice de Probabilité et d'Impact des Risques</div>
                     </div>
                     <div class="matrix-body">
                         <div class="risk-matrix" id="riskMatrix">
                             <!-- Matrix headers -->
                             <div class="matrix-cell"></div>
-                            <div class="matrix-cell matrix-header-cell">Very Low</div>
-                            <div class="matrix-cell matrix-header-cell">Low</div>
-                            <div class="matrix-cell matrix-header-cell">Medium</div>
-                            <div class="matrix-cell matrix-header-cell">High</div>
-                            <div class="matrix-cell matrix-header-cell">Very High</div>
+                            <div class="matrix-cell matrix-header-cell">Très Faible</div>
+                            <div class="matrix-cell matrix-header-cell">Faible</div>
+                            <div class="matrix-cell matrix-header-cell">Moyen</div>
+                            <div class="matrix-cell matrix-header-cell">Élevé</div>
+                            <div class="matrix-cell matrix-header-cell">Très Élevé</div>
                             
                             <!-- Matrix rows -->
-                            <div class="matrix-cell matrix-label">Very High</div>
+                            <div class="matrix-cell matrix-label">Très Élevé</div>
                             <div class="matrix-cell risk-cell medium" data-prob="5" data-impact="1"></div>
                             <div class="matrix-cell risk-cell medium" data-prob="5" data-impact="2"></div>
                             <div class="matrix-cell risk-cell high" data-prob="5" data-impact="3"></div>
                             <div class="matrix-cell risk-cell high" data-prob="5" data-impact="4"></div>
                             <div class="matrix-cell risk-cell high" data-prob="5" data-impact="5"></div>
                             
-                            <div class="matrix-cell matrix-label">High</div>
+                            <div class="matrix-cell matrix-label">Élevé</div>
                             <div class="matrix-cell risk-cell low" data-prob="4" data-impact="1"></div>
                             <div class="matrix-cell risk-cell medium" data-prob="4" data-impact="2"></div>
                             <div class="matrix-cell risk-cell medium" data-prob="4" data-impact="3"></div>
                             <div class="matrix-cell risk-cell high" data-prob="4" data-impact="4"></div>
                             <div class="matrix-cell risk-cell high" data-prob="4" data-impact="5"></div>
                             
-                            <div class="matrix-cell matrix-label">Medium</div>
+                            <div class="matrix-cell matrix-label">Moyen</div>
                             <div class="matrix-cell risk-cell low" data-prob="3" data-impact="1"></div>
                             <div class="matrix-cell risk-cell low" data-prob="3" data-impact="2"></div>
                             <div class="matrix-cell risk-cell medium" data-prob="3" data-impact="3"></div>
                             <div class="matrix-cell risk-cell medium" data-prob="3" data-impact="4"></div>
                             <div class="matrix-cell risk-cell high" data-prob="3" data-impact="5"></div>
                             
-                            <div class="matrix-cell matrix-label">Low</div>
+                            <div class="matrix-cell matrix-label">Faible</div>
                             <div class="matrix-cell risk-cell low" data-prob="2" data-impact="1"></div>
                             <div class="matrix-cell risk-cell low" data-prob="2" data-impact="2"></div>
                             <div class="matrix-cell risk-cell low" data-prob="2" data-impact="3"></div>
                             <div class="matrix-cell risk-cell medium" data-prob="2" data-impact="4"></div>
                             <div class="matrix-cell risk-cell medium" data-prob="2" data-impact="5"></div>
                             
-                            <div class="matrix-cell matrix-label">Very Low</div>
+                            <div class="matrix-cell matrix-label">Très Faible</div>
                             <div class="matrix-cell risk-cell low" data-prob="1" data-impact="1"></div>
                             <div class="matrix-cell risk-cell low" data-prob="1" data-impact="2"></div>
                             <div class="matrix-cell risk-cell low" data-prob="1" data-impact="3"></div>
@@ -818,15 +759,15 @@ $low_risks = count(array_filter($risks, function($risk) { return $risk['brutCrit
                         <div class="matrix-legend">
                             <div class="legend-item">
                                 <div class="legend-color high"></div>
-                                <span>High Risk (≥18)</span>
+                                <span>Risque Élevé (≥18)</span>
                             </div>
                             <div class="legend-item">
                                 <div class="legend-color medium"></div>
-                                <span>Medium Risk (12-17)</span>
+                                <span>Risque Moyen (12-17)</span>
                             </div>
                             <div class="legend-item">
                                 <div class="legend-color low"></div>
-                                <span>Low Risk (<12)</span>
+                                <span>Risque Faible (<12)</span>
                             </div>
                         </div>
                     </div>
@@ -835,16 +776,22 @@ $low_risks = count(array_filter($risks, function($risk) { return $risk['brutCrit
                 <!-- Risk List -->
                 <div class="risk-list">
                     <div class="risk-list-header">
-                        <div class="risk-list-title">Risk Details</div>
+                        <div class="risk-list-title"><?php echo __('Risk Details'); ?></div>
                     </div>
                     <?php foreach ($risks as $risk): ?>
                         <div class="risk-item">
                             <div class="risk-info">
                                 <div class="risk-name"><?php echo htmlspecialchars($risk['name']); ?></div>
                                 <div class="risk-details">
-                                    <?php echo htmlspecialchars($risk['code']); ?> • 
-                                    <?php echo htmlspecialchars($risk['project_name']); ?> • 
-                                    Probability: <?php echo $risk['frequency']; ?>/5 • 
+                                    <?php 
+                                    if (!empty($risk['code'])) {
+                                        echo htmlspecialchars($risk['code']) . ' • ';
+                                    }
+                                    if (!empty($risk['project_name'])) {
+                                        echo htmlspecialchars($risk['project_name']) . ' • ';
+                                    }
+                                    ?>
+                                    Probabilité: <?php echo $risk['frequency']; ?>/5 • 
                                     Impact: <?php echo number_format($risk['avgImpact'], 1); ?>/5
                                 </div>
                             </div>
@@ -856,7 +803,7 @@ $low_risks = count(array_filter($risks, function($risk) { return $risk['brutCrit
                                 ?>">
                                     <?php echo $risk['brutCriticality']; ?>
                                 </div>
-                                <div class="score-label">Risk Score</div>
+                                <div class="score-label">Score de Risque</div>
                             </div>
                         </div>
                     <?php endforeach; ?>

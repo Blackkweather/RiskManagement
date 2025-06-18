@@ -1,132 +1,29 @@
 <?php
 session_start();
+require_once 'lang/translation.php';
 
-// Sample control data for demonstration
-$controls = [
-    [
-        'id' => 1,
-        'name' => 'Multi-Factor Authentication',
-        'code' => 'CTRL-001',
-        'description' => 'Implementation of MFA for all user accounts to prevent unauthorized access',
-        'type' => 'Preventive',
-        'frequency' => 'Continuous',
-        'effectiveness' => 85,
-        'cost' => 15000,
-        'status' => 'Active',
-        'risk_name' => 'Data Security Vulnerability',
-        'entity_name' => 'IT Department',
-        'project_name' => 'Customer Portal Redesign',
-        'responsible' => 'Security Team',
-        'implementationDate' => '2025-02-01',
-        'lastReview' => '2025-06-01'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Budget Monitoring Dashboard',
-        'code' => 'CTRL-002',
-        'description' => 'Real-time budget tracking and alert system for project expenditures',
-        'type' => 'Detective',
-        'frequency' => 'Daily',
-        'effectiveness' => 75,
-        'cost' => 8000,
-        'status' => 'Active',
-        'risk_name' => 'Budget Overrun Risk',
-        'entity_name' => 'Development Team',
-        'project_name' => 'Mobile Banking App',
-        'responsible' => 'Project Manager',
-        'implementationDate' => '2025-02-15',
-        'lastReview' => '2025-05-15'
-    ],
-    [
-        'id' => 3,
-        'name' => 'Knowledge Documentation System',
-        'code' => 'CTRL-003',
-        'description' => 'Comprehensive documentation and knowledge transfer protocols',
-        'type' => 'Preventive',
-        'frequency' => 'Ongoing',
-        'effectiveness' => 70,
-        'cost' => 12000,
-        'status' => 'Active',
-        'risk_name' => 'Key Personnel Unavailability',
-        'entity_name' => 'Operations',
-        'project_name' => 'ERP System Implementation',
-        'responsible' => 'HR Department',
-        'implementationDate' => '2025-03-01',
-        'lastReview' => '2025-06-01'
-    ],
-    [
-        'id' => 4,
-        'name' => 'API Integration Testing Suite',
-        'code' => 'CTRL-004',
-        'description' => 'Automated testing framework for third-party API integrations',
-        'type' => 'Detective',
-        'frequency' => 'Weekly',
-        'effectiveness' => 80,
-        'cost' => 20000,
-        'status' => 'Active',
-        'risk_name' => 'Third-party Integration Failure',
-        'entity_name' => 'Development Team',
-        'project_name' => 'E-commerce Platform',
-        'responsible' => 'QA Team',
-        'implementationDate' => '2025-04-01',
-        'lastReview' => '2025-06-01'
-    ],
-    [
-        'id' => 5,
-        'name' => 'Regulatory Compliance Checklist',
-        'code' => 'CTRL-005',
-        'description' => 'Systematic compliance verification and audit procedures',
-        'type' => 'Detective',
-        'frequency' => 'Monthly',
-        'effectiveness' => 90,
-        'cost' => 25000,
-        'status' => 'Active',
-        'risk_name' => 'Regulatory Compliance Gap',
-        'entity_name' => 'Compliance',
-        'project_name' => 'Mobile Banking App',
-        'responsible' => 'Compliance Officer',
-        'implementationDate' => '2025-02-20',
-        'lastReview' => '2025-05-20'
-    ],
-    [
-        'id' => 6,
-        'name' => 'Performance Monitoring Tools',
-        'code' => 'CTRL-006',
-        'description' => 'Real-time application performance monitoring and alerting',
-        'type' => 'Detective',
-        'frequency' => 'Continuous',
-        'effectiveness' => 85,
-        'cost' => 18000,
-        'status' => 'Active',
-        'risk_name' => 'System Performance Degradation',
-        'entity_name' => 'QA Team',
-        'project_name' => 'Customer Portal Redesign',
-        'responsible' => 'DevOps Team',
-        'implementationDate' => '2025-01-15',
-        'lastReview' => '2025-05-15'
-    ],
-    [
-        'id' => 7,
-        'name' => 'Data Backup and Recovery System',
-        'code' => 'CTRL-007',
-        'description' => 'Automated backup procedures and disaster recovery protocols',
-        'type' => 'Corrective',
-        'frequency' => 'Daily',
-        'effectiveness' => 95,
-        'cost' => 30000,
-        'status' => 'Implemented',
-        'risk_name' => 'Data Migration Error',
-        'entity_name' => 'Operations',
-        'project_name' => 'ERP System Implementation',
-        'responsible' => 'IT Operations',
-        'implementationDate' => '2025-03-15',
-        'lastReview' => '2025-06-10'
-    ]
-];
+// Enable error reporting
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Include database connection
+require_once 'config/database.php';
+$db = new Database();
+$conn = $db->getConnection();
+
+// Fetch controls from the correct table: riskcontrol
+$controls = [];
+if ($conn) {
+    $stmt = $conn->query("SELECT * FROM riskcontrol");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $controls[] = $row;
+    }
+}
 
 $total_controls = count($controls);
-$active_controls = count(array_filter($controls, function($control) { return $control['status'] === 'Active'; }));
-$avg_effectiveness = round(array_sum(array_column($controls, 'effectiveness')) / count($controls));
+$active_controls = count(array_filter($controls, function($control) { return isset($control['status']) && $control['status'] === 'Active'; }));
+$avg_effectiveness = $total_controls > 0 ? round(array_sum(array_column($controls, 'effectiveness')) / $total_controls) : 0;
 $total_cost = array_sum(array_column($controls, 'cost'));
 ?>
 <!DOCTYPE html>
@@ -134,7 +31,7 @@ $total_cost = array_sum(array_column($controls, 'cost'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controls Management - RiskGuard Pro</title>
+    <title><?php echo __('Controls Management'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -720,27 +617,27 @@ $total_cost = array_sum(array_column($controls, 'cost'));
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="controls.php" class="active"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> Reports</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li><a href="controls.php" class="active"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a></li>
+                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?></a></li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="Admin User">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="<?php echo __('Admin User'); ?>">
                 <div>
-                    <strong>Admin User</strong>
-                    <small>System Administrator</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -748,7 +645,7 @@ $total_cost = array_sum(array_column($controls, 'cost'));
         <div class="content">
             <header class="header">
                 <div class="header-left">
-                    <h1>Controls Management</h1>
+                    <h1><?php echo __('Controls Management'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -756,7 +653,7 @@ $total_cost = array_sum(array_column($controls, 'cost'));
                         <span class="badge">3</span>
                     </div>
                     <a href="logout.php" class="btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <?php echo __('Logout'); ?>
                     </a>
                 </div>
             </header>
@@ -764,62 +661,62 @@ $total_cost = array_sum(array_column($controls, 'cost'));
             <main class="main-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Controls</h3>
+                        <h3><?php echo __('Total Controls'); ?></h3>
                         <div class="stat-value"><?php echo $total_controls; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-shield-check"></i> All controls
+                            <i class="fas fa-shield-check"></i> <?php echo __('All controls'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Active Controls</h3>
+                        <h3><?php echo __('Active Controls'); ?></h3>
                         <div class="stat-value"><?php echo $active_controls; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-play-circle"></i> Currently active
+                            <i class="fas fa-play-circle"></i> <?php echo __('Currently active'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Avg Effectiveness</h3>
+                        <h3><?php echo __('Avg Effectiveness'); ?></h3>
                         <div class="stat-value"><?php echo $avg_effectiveness; ?>%</div>
                         <div class="stat-change">
-                            <i class="fas fa-chart-line"></i> Overall performance
+                            <i class="fas fa-chart-line"></i> <?php echo __('Overall performance'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Investment</h3>
+                        <h3><?php echo __('Total Investment'); ?></h3>
                         <div class="stat-value">$<?php echo number_format($total_cost); ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-dollar-sign"></i> Control costs
+                            <i class="fas fa-dollar-sign"></i> <?php echo __('Control costs'); ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Risk Controls</h3>
+                        <h3 class="card-title"><?php echo __('Risk Controls'); ?></h3>
                         <a href="control_add.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add New Control
+                            <i class="fas fa-plus"></i> <?php echo __('Add New Control'); ?>
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="search-filter">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search controls..." id="searchInput">
+                                <input type="text" placeholder="<?php echo __('Search controls...'); ?>" id="searchInput">
                             </div>
                             <select class="filter-select" id="typeFilter">
-                                <option value="">All Types</option>
-                                <option value="Preventive">Preventive</option>
-                                <option value="Detective">Detective</option>
-                                <option value="Corrective">Corrective</option>
+                                <option value=""><?php echo __('All Types'); ?></option>
+                                <option value="Preventive"><?php echo __('Preventive'); ?></option>
+                                <option value="Detective"><?php echo __('Detective'); ?></option>
+                                <option value="Corrective"><?php echo __('Corrective'); ?></option>
                             </select>
                             <select class="filter-select" id="statusFilter">
-                                <option value="">All Status</option>
-                                <option value="Active">Active</option>
-                                <option value="Implemented">Implemented</option>
-                                <option value="Inactive">Inactive</option>
+                                <option value=""><?php echo __('All Status'); ?></option>
+                                <option value="Active"><?php echo __('Active'); ?></option>
+                                <option value="Implemented"><?php echo __('Implemented'); ?></option>
+                                <option value="Inactive"><?php echo __('Inactive'); ?></option>
                             </select>
                             <select class="filter-select" id="projectFilter">
-                                <option value="">All Projects</option>
+                                <option value=""><?php echo __('All Projects'); ?></option>
                                 <option value="Customer Portal Redesign">Customer Portal Redesign</option>
                                 <option value="Mobile Banking App">Mobile Banking App</option>
                                 <option value="ERP System Implementation">ERP System Implementation</option>
@@ -830,15 +727,15 @@ $total_cost = array_sum(array_column($controls, 'cost'));
                         <table class="table" id="controlsTable">
                             <thead>
                                 <tr>
-                                    <th>Control ID</th>
-                                    <th>Control Name</th>
-                                    <th>Type</th>
-                                    <th>Risk Addressed</th>
-                                    <th>Effectiveness</th>
-                                    <th>Cost</th>
-                                    <th>Status</th>
-                                    <th>Responsible</th>
-                                    <th>Actions</th>
+                                    <th><?php echo __('Control ID'); ?></th>
+                                    <th><?php echo __('Control Name'); ?></th>
+                                    <th><?php echo __('Type'); ?></th>
+                                    <th><?php echo __('Risk Addressed'); ?></th>
+                                    <th><?php echo __('Effectiveness'); ?></th>
+                                    <th><?php echo __('Cost'); ?></th>
+                                    <th><?php echo __('Status'); ?></th>
+                                    <th><?php echo __('Responsible'); ?></th>
+                                    <th><?php echo __('Actions'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -855,7 +752,7 @@ $total_cost = array_sum(array_column($controls, 'cost'));
                                     </td>
                                     <td>
                                         <span class="type-badge type-<?php echo strtolower($control['type']); ?>">
-                                            <?php echo $control['type']; ?>
+                                            <?php echo __($control['type']); ?>
                                         </span>
                                     </td>
                                     <td><?php echo htmlspecialchars($control['risk_name']); ?></td>
@@ -868,16 +765,16 @@ $total_cost = array_sum(array_column($controls, 'cost'));
                                     <td>$<?php echo number_format($control['cost']); ?></td>
                                     <td>
                                         <span class="status-badge status-<?php echo strtolower($control['status']); ?>">
-                                            <?php echo $control['status']; ?>
+                                            <?php echo __($control['status']); ?>
                                         </span>
                                     </td>
                                     <td><?php echo htmlspecialchars($control['responsible']); ?></td>
                                     <td>
                                         <a href="control_details.php?id=<?php echo $control['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
                                         <a href="control_edit.php?id=<?php echo $control['id']; ?>" class="btn btn-primary btn-sm" style="background: var(--warning);">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="fas fa-edit"></i> <?php echo __('Edit'); ?>
                                         </a>
                                     </td>
                                 </tr>

@@ -1,158 +1,125 @@
 <?php
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
+require_once 'lang/translation.php';
+require_once 'config/database.php';
 
-// Enhanced report data with more comprehensive information
-$reports = [
-    [
-        'id' => 1,
-        'name' => 'Monthly Risk Assessment Report',
-        'type' => 'Risk Assessment',
-        'description' => 'Comprehensive monthly analysis of all identified risks and their current status',
-        'project_name' => 'Customer Portal Redesign',
-        'generated_by' => 'Risk Manager',
-        'generated_at' => '2025-06-01',
-        'status' => 'Published',
-        'file_size' => '2.4 MB',
-        'download_count' => 15,
-        'format' => 'PDF',
-        'category' => 'Operational'
-    ],
-    [
-        'id' => 2,
-        'name' => 'Control Effectiveness Review',
-        'type' => 'Control Assessment',
-        'description' => 'Quarterly review of control effectiveness and recommendations for improvement',
-        'project_name' => 'Mobile Banking App',
-        'generated_by' => 'Compliance Officer',
-        'generated_at' => '2025-05-15',
-        'status' => 'Published',
-        'file_size' => '1.8 MB',
-        'download_count' => 8,
-        'format' => 'PDF',
-        'category' => 'Compliance'
-    ],
-    [
-        'id' => 3,
-        'name' => 'Project Risk Dashboard',
-        'type' => 'Dashboard',
-        'description' => 'Real-time dashboard showing current risk status across all active projects',
-        'project_name' => 'All Projects',
-        'generated_by' => 'System',
-        'generated_at' => '2025-06-13',
-        'status' => 'Live',
-        'file_size' => 'N/A',
-        'download_count' => 45,
-        'format' => 'Interactive',
-        'category' => 'Executive'
-    ],
-    [
-        'id' => 4,
-        'name' => 'Compliance Audit Report',
-        'type' => 'Compliance',
-        'description' => 'Annual compliance audit findings and regulatory adherence assessment',
-        'project_name' => 'ERP System Implementation',
-        'generated_by' => 'External Auditor',
-        'generated_at' => '2025-04-30',
-        'status' => 'Published',
-        'file_size' => '5.2 MB',
-        'download_count' => 22,
-        'format' => 'PDF',
-        'category' => 'Regulatory'
-    ],
-    [
-        'id' => 5,
-        'name' => 'Incident Response Summary',
-        'type' => 'Incident Report',
-        'description' => 'Summary of security incidents and response actions taken in Q2 2025',
-        'project_name' => 'Security Audit System',
-        'generated_by' => 'Security Team',
-        'generated_at' => '2025-06-10',
-        'status' => 'Draft',
-        'file_size' => '1.1 MB',
-        'download_count' => 3,
-        'format' => 'PDF',
-        'category' => 'Security'
-    ],
-    [
-        'id' => 6,
-        'name' => 'Budget vs Risk Analysis',
-        'type' => 'Financial',
-        'description' => 'Analysis of risk mitigation costs versus potential financial impact',
-        'project_name' => 'E-commerce Platform',
-        'generated_by' => 'Financial Analyst',
-        'generated_at' => '2025-05-28',
-        'status' => 'Published',
-        'file_size' => '3.1 MB',
-        'download_count' => 12,
-        'format' => 'Excel',
-        'category' => 'Financial'
-    ],
-    [
-        'id' => 7,
-        'name' => 'Risk Trend Analysis',
-        'type' => 'Analytics',
-        'description' => 'Quarterly analysis of risk trends and patterns across all business units',
-        'project_name' => 'All Projects',
-        'generated_by' => 'Data Analyst',
-        'generated_at' => '2025-06-05',
-        'status' => 'Published',
-        'file_size' => '4.2 MB',
-        'download_count' => 18,
-        'format' => 'PDF',
-        'category' => 'Strategic'
-    ],
-    [
-        'id' => 8,
-        'name' => 'Executive Risk Summary',
-        'type' => 'Executive Summary',
-        'description' => 'High-level overview of key risks and mitigation strategies for executive review',
-        'project_name' => 'All Projects',
-        'generated_by' => 'Chief Risk Officer',
-        'generated_at' => '2025-06-12',
-        'status' => 'Published',
-        'file_size' => '0.8 MB',
-        'download_count' => 35,
-        'format' => 'PDF',
-        'category' => 'Executive'
-    ]
-];
-
-// Calculate statistics
-$total_reports = count($reports);
-$published_reports = count(array_filter($reports, function($report) { return $report['status'] === 'Published'; }));
-$draft_reports = count(array_filter($reports, function($report) { return $report['status'] === 'Draft'; }));
-$total_downloads = array_sum(array_column($reports, 'download_count'));
-
-// Group reports by category for better organization
+// Initialize variables
+$total_reports = 0;
+$published_reports = 0;
+$draft_reports = 0;
+$total_downloads = 0;
 $categories = [];
-foreach ($reports as $report) {
-    $categories[$report['category']][] = $report;
+$monthly_downloads = [];
+$report_types = [];
+
+try {
+    // Connect to database
+    $db = new Database();
+    $conn = $db->getConnection();
+
+    // Get all reports with their download counts
+    $reportsQuery = "SELECT r.*, COUNT(rd.id) as actual_downloads,
+                            e.name as entityName, p.name as projectName
+                     FROM Report r 
+                     LEFT JOIN ReportDownload rd ON r.id = rd.reportId
+                     LEFT JOIN Entity e ON r.entityId = e.id
+                     LEFT JOIN Project p ON r.projectId = p.id
+                     GROUP BY r.id
+                     ORDER BY r.createdAt DESC";
+    
+    $reports = [];
+    if ($stmt = $conn->query($reportsQuery)) {
+        $reports = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Calculate statistics
+        $total_reports = count($reports);
+        $published_reports = count(array_filter($reports, function($r) { 
+            return $r['status'] === 'Published'; 
+        }));
+        $draft_reports = $total_reports - $published_reports;
+        
+        // Group reports by type
+        foreach ($reports as $report) {
+            $type = $report['type'];
+            if (!isset($categories[$type])) {
+                $categories[$type] = [];
+            }
+            $categories[$type][] = $report;
+            
+            // Count downloads
+            $total_downloads += intval($report['actual_downloads']);
+        }
+    }
+
+    // Get monthly downloads for current year
+    $monthly_downloads = array_fill(0, 12, 0); // Initialize all months with 0
+    $current_year = date('Y');
+    $downloadsQuery = "SELECT MONTH(downloadedAt) as month, COUNT(*) as count 
+                      FROM ReportDownload 
+                      WHERE YEAR(downloadedAt) = ?
+                      GROUP BY MONTH(downloadedAt)";
+    
+    if ($stmt = $conn->prepare($downloadsQuery)) {
+        $stmt->execute([$current_year]);
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $monthly_downloads[$row['month'] - 1] = intval($row['count']);
+        }
+    }
+
+    // Get report types distribution
+    $typesQuery = "SELECT type, COUNT(*) as count FROM Report GROUP BY type";
+    if ($stmt = $conn->query($typesQuery)) {
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $report_types[$row['type']] = intval($row['count']);
+        }
+    }
+
+} catch (PDOException $e) {
+    // Log the error
+    error_log("Database Error: " . $e->getMessage());
+    $error_message = "Une erreur est survenue lors de la récupération des données.";
 }
 
-// Sample chart data for analytics
-$monthly_downloads = [
-    'January' => 45,
-    'February' => 52,
-    'March' => 38,
-    'April' => 67,
-    'May' => 73,
-    'June' => 89
-];
+// If categories are empty, initialize with default types
+if (empty($categories)) {
+    $categories = [
+        'Risk Assessment' => [],
+        'Compliance' => [],
+        'Financial' => [],
+        'Security' => [],
+        'Executive' => []
+    ];
+}
 
-$report_types = [
-    'Risk Assessment' => 3,
-    'Compliance' => 2,
-    'Financial' => 1,
-    'Security' => 1,
-    'Executive' => 1
+// Convert monthly_downloads to the format expected by the chart
+$months = [
+    'January', 'February', 'March', 'April', 
+    'May', 'June', 'July', 'August',
+    'September', 'October', 'November', 'December'
 ];
+$monthly_downloads_chart = array_combine($months, $monthly_downloads);
+
+// If report_types is empty, initialize with default types
+if (empty($report_types)) {
+    $report_types = [
+        'Risk Assessment' => 0,
+        'Compliance' => 0,
+        'Financial' => 0,
+        'Security' => 0,
+        'Executive' => 0
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports Management - RiskGuard Pro</title>
+    <title><?php echo __('Reports Management'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -841,29 +808,35 @@ $report_types = [
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="risk_matrix.php"><i class="fas fa-th"></i> Risk Matrix</a></li>
-                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php" class="active"><i class="fas fa-file-alt"></i> Reports</a></li>
-                    <li><a href="analytics.php"><i class="fas fa-chart-bar"></i> Analytics</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li>
+                        <a href="controls.php"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a>
+                    </li>
+                    <li class="submenu">
+                        <a href="reports.php" class="active"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?> <i class="fas fa-chevron-down submenu-toggle"></i></a>
+                        <ul>
+                            <li><a href="risk_matrix.php"><?php echo __('Risk Matrix'); ?></a></li>
+                            <li><a href="analytics.php"><?php echo __('Analytics'); ?></a></li>
+                        </ul>
+                    </li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" alt="User">
+                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" alt="<?php echo __('Admin User'); ?>">
                 <div>
-                    <strong>John Doe</strong>
-                    <small>Risk Manager</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -871,40 +844,45 @@ $report_types = [
         <main>
             <header class="header">
                 <div class="header-left">
-                    <h1><i class="fas fa-file-alt"></i> Reports Management</h1>
+                    <h1><i class="fas fa-file-alt"></i> <?php echo __('Reports Management'); ?></h1>
                 </div>
                 <div class="header-right">
                     <button class="btn btn-success" onclick="openReportBuilder()">
-                        <i class="fas fa-plus"></i> Generate Report
+                        <i class="fas fa-plus"></i> <?php echo __('Generate Report'); ?>
                     </button>
                     <a href="#" class="btn">
-                        <i class="fas fa-download"></i> Export All
+                        <i class="fas fa-download"></i> <?php echo __('Export All'); ?>
                     </a>
                 </div>
             </header>
 
             <div class="main-content">
+                <?php if (isset($error_message)): ?>
+                    <div class="alert alert-danger">
+                        <?php echo htmlspecialchars($error_message); ?>
+                    </div>
+                <?php else: ?>
                 <!-- Stats Cards -->
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Reports</h3>
+                        <h3><?php echo __('Total Reports'); ?></h3>
                         <div class="stat-value"><?php echo $total_reports; ?></div>
-                        <div class="stat-change">All time</div>
+                        <div class="stat-change"><?php echo __('All time'); ?></div>
                     </div>
                     <div class="stat-card">
-                        <h3>Published</h3>
+                        <h3><?php echo __('Published'); ?></h3>
                         <div class="stat-value"><?php echo $published_reports; ?></div>
-                        <div class="stat-change">Ready for download</div>
+                        <div class="stat-change"><?php echo __('Ready for download'); ?></div>
                     </div>
                     <div class="stat-card">
-                        <h3>Draft Reports</h3>
+                        <h3><?php echo __('Draft Reports'); ?></h3>
                         <div class="stat-value"><?php echo $draft_reports; ?></div>
-                        <div class="stat-change">In progress</div>
+                        <div class="stat-change"><?php echo __('In progress'); ?></div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Downloads</h3>
+                        <h3><?php echo __('Total Downloads'); ?></h3>
                         <div class="stat-value"><?php echo $total_downloads; ?></div>
-                        <div class="stat-change">This month</div>
+                        <div class="stat-change"><?php echo __('All time'); ?></div>
                     </div>
                 </div>
 
@@ -912,7 +890,7 @@ $report_types = [
                 <div class="charts-grid">
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Monthly Download Trends</div>
+                            <div class="card-title"><?php echo __('Monthly Download Trends'); ?></div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -922,7 +900,7 @@ $report_types = [
                     </div>
                     <div class="card">
                         <div class="card-header">
-                            <div class="card-title">Report Types Distribution</div>
+                            <div class="card-title"><?php echo __('Report Types Distribution'); ?></div>
                         </div>
                         <div class="card-body">
                             <div class="chart-container">
@@ -936,89 +914,96 @@ $report_types = [
                 <div class="search-filter">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search reports..." id="searchInput">
+                        <input type="text" placeholder="<?php echo __('Search reports...'); ?>" id="searchInput">
                     </div>
                     <select class="filter-select" id="statusFilter">
-                        <option value="">All Status</option>
-                        <option value="Published">Published</option>
-                        <option value="Draft">Draft</option>
-                        <option value="Live">Live</option>
+                        <option value=""><?php echo __('All Status'); ?></option>
+                        <option value="Published"><?php echo __('Published'); ?></option>
+                        <option value="Draft"><?php echo __('Draft'); ?></option>
                     </select>
                     <select class="filter-select" id="categoryFilter">
-                        <option value="">All Categories</option>
-                        <option value="Executive">Executive</option>
-                        <option value="Operational">Operational</option>
-                        <option value="Compliance">Compliance</option>
-                        <option value="Financial">Financial</option>
-                        <option value="Security">Security</option>
-                        <option value="Strategic">Strategic</option>
-                        <option value="Regulatory">Regulatory</option>
+                        <option value=""><?php echo __('All Categories'); ?></option>
+                        <?php foreach (array_keys($categories) as $type): ?>
+                            <option value="<?php echo htmlspecialchars($type); ?>">
+                                <?php echo htmlspecialchars($type); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                     <select class="filter-select" id="formatFilter">
-                        <option value="">All Formats</option>
-                        <option value="PDF">PDF</option>
-                        <option value="Excel">Excel</option>
-                        <option value="Interactive">Interactive</option>
+                        <option value=""><?php echo __('All Formats'); ?></option>
+                        <option value="PDF"><?php echo __('PDF'); ?></option>
+                        <option value="Excel"><?php echo __('Excel'); ?></option>
+                        <option value="Interactive"><?php echo __('Interactive'); ?></option>
                     </select>
                 </div>
 
                 <!-- Reports by Category -->
-                <?php foreach ($categories as $category => $categoryReports): ?>
-                <div class="category-section">
-                    <div class="category-header">
-                        <div class="category-title"><?php echo htmlspecialchars($category); ?> Reports</div>
-                        <div class="category-count"><?php echo count($categoryReports); ?></div>
-                    </div>
-                    <div class="reports-grid">
-                        <?php foreach ($categoryReports as $report): ?>
-                        <div class="report-card" data-status="<?php echo $report['status']; ?>" data-category="<?php echo $report['category']; ?>" data-format="<?php echo $report['format']; ?>">
-                            <div class="report-header">
-                                <div class="report-title"><?php echo htmlspecialchars($report['name']); ?></div>
-                                <div class="report-meta">
-                                    <span class="status-badge status-<?php echo strtolower($report['status']); ?>">
-                                        <?php echo $report['status']; ?>
-                                    </span>
-                                    <span class="format-badge"><?php echo $report['format']; ?></span>
-                                    <span><?php echo date('M j, Y', strtotime($report['generated_at'])); ?></span>
-                                </div>
-                                <div class="report-description">
-                                    <?php echo htmlspecialchars($report['description']); ?>
-                                </div>
-                            </div>
-                            <div class="report-body">
-                                <div class="report-stats">
-                                    <div class="report-stat">
-                                        <div class="report-stat-value"><?php echo $report['download_count']; ?></div>
-                                        <div class="report-stat-label">Downloads</div>
+                <?php foreach ($categories as $type => $typeReports): ?>
+                    <?php if (!empty($typeReports)): ?>
+                    <div class="category-section">
+                        <div class="category-header">
+                            <div class="category-title"><?php echo htmlspecialchars($type); ?> <?php echo __('Reports'); ?></div>
+                            <div class="category-count"><?php echo count($typeReports); ?></div>
+                        </div>
+                        <div class="reports-grid">
+                            <?php foreach ($typeReports as $report): ?>
+                            <div class="report-card" 
+                                 data-status="<?php echo htmlspecialchars($report['status']); ?>" 
+                                 data-category="<?php echo htmlspecialchars($report['type']); ?>" 
+                                 data-format="<?php echo htmlspecialchars($report['format'] ?? 'PDF'); ?>">
+                                <div class="report-header">
+                                    <div class="report-title"><?php echo htmlspecialchars($report['name']); ?></div>
+                                    <div class="report-meta">
+                                        <span class="status-badge status-<?php echo strtolower($report['status']); ?>">
+                                            <?php echo htmlspecialchars($report['status']); ?>
+                                        </span>
+                                        <span class="format-badge"><?php echo htmlspecialchars($report['format'] ?? 'PDF'); ?></span>
+                                        <span><?php echo date('M j, Y', strtotime($report['createdAt'])); ?></span>
                                     </div>
-                                    <div class="report-stat">
-                                        <div class="report-stat-value"><?php echo $report['file_size']; ?></div>
-                                        <div class="report-stat-label">Size</div>
+                                    <div class="report-description">
+                                        <?php echo htmlspecialchars($report['description'] ?? ''); ?>
                                     </div>
-                                    <div class="report-stat">
-                                        <div class="report-stat-value"><?php echo htmlspecialchars($report['generated_by']); ?></div>
-                                        <div class="report-stat-label">Author</div>
+                                    <?php if (!empty($report['entityName'])): ?>
+                                    <div class="report-meta">
+                                        <span><i class="fas fa-building"></i> <?php echo htmlspecialchars($report['entityName']); ?></span>
                                     </div>
+                                    <?php endif; ?>
                                 </div>
-                                <div class="report-actions">
-                                    <?php if ($report['status'] === 'Published' || $report['status'] === 'Live'): ?>
-                                    <a href="#" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-download"></i> Download
+                                <div class="report-body">
+                                    <div class="report-stats">
+                                        <div class="report-stat">
+                                            <div class="report-stat-value"><?php echo intval($report['actual_downloads'] ?? 0); ?></div>
+                                            <div class="report-stat-label"><?php echo __('Downloads'); ?></div>
+                                        </div>
+                                        <div class="report-stat">
+                                            <div class="report-stat-value"><?php echo htmlspecialchars($report['file_size'] ?? 'N/A'); ?></div>
+                                            <div class="report-stat-label"><?php echo __('Size'); ?></div>
+                                        </div>
+                                        <div class="report-stat">
+                                            <div class="report-stat-value"><?php echo htmlspecialchars($report['generated_by'] ?? 'System'); ?></div>
+                                            <div class="report-stat-label"><?php echo __('Author'); ?></div>
+                                        </div>
+                                    </div>                                <div class="report-actions">
+                                    <?php if ($report['status'] === 'Published'): ?>
+                                    <a href="download_report.php?id=<?php echo $report['id']; ?>" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-download"></i> <?php echo __('Download'); ?>
                                     </a>
                                     <?php endif; ?>
-                                    <a href="#" class="btn btn-secondary btn-sm">
-                                        <i class="fas fa-eye"></i> View
+                                    <a href="view_report.php?id=<?php echo $report['id']; ?>" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                     </a>
-                                    <a href="#" class="btn btn-secondary btn-sm">
-                                        <i class="fas fa-share"></i> Share
+                                    <a href="share_report.php?id=<?php echo $report['id']; ?>" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-share"></i> <?php echo __('Share'); ?>
                                     </a>
                                 </div>
+                                </div>
                             </div>
+                            <?php endforeach; ?>
                         </div>
-                        <?php endforeach; ?>
                     </div>
-                </div>
+                    <?php endif; ?>
                 <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </main>
     </div>
@@ -1027,53 +1012,44 @@ $report_types = [
     <div class="modal" id="reportBuilderModal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">Generate New Report</div>
-                <p>Create a custom report with your preferred settings and data sources.</p>
+                <div class="modal-title"><?php echo __('Generate New Report'); ?></div>
+                <p><?php echo __('Create a custom report with your preferred settings and data sources.'); ?></p>
             </div>
             <form id="reportBuilderForm">
                 <div class="form-group">
-                    <label for="reportName">Report Name</label>
-                    <input type="text" id="reportName" name="reportName" required placeholder="Enter report name">
+                    <label for="reportName"><?php echo __('Report Name'); ?></label>
+                    <input type="text" id="reportName" name="reportName" required>
                 </div>
                 <div class="form-group">
-                    <label for="reportType">Report Type</label>
+                    <label for="reportType"><?php echo __('Report Type'); ?></label>
                     <select id="reportType" name="reportType" required>
-                        <option value="">Select report type</option>
-                        <option value="Risk Assessment">Risk Assessment</option>
-                        <option value="Control Assessment">Control Assessment</option>
-                        <option value="Compliance">Compliance Report</option>
-                        <option value="Financial">Financial Analysis</option>
-                        <option value="Executive Summary">Executive Summary</option>
-                        <option value="Incident Report">Incident Report</option>
-                        <option value="Analytics">Analytics Report</option>
+                        <option value=""><?php echo __('Select report type'); ?></option>
+                        <?php foreach (array_keys($categories) as $type): ?>
+                            <option value="<?php echo htmlspecialchars($type); ?>">
+                                <?php echo htmlspecialchars($type); ?>
+                            </option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="reportProject">Project Scope</label>
-                    <select id="reportProject" name="reportProject">
-                        <option value="all">All Projects</option>
-                        <option value="1">Customer Portal Redesign</option>
-                        <option value="2">Mobile Banking App</option>
-                        <option value="3">ERP System Implementation</option>
-                        <option value="4">E-commerce Platform</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="reportFormat">Output Format</label>
+                    <label for="reportFormat"><?php echo __('Output Format'); ?></label>
                     <select id="reportFormat" name="reportFormat" required>
-                        <option value="PDF">PDF Document</option>
-                        <option value="Excel">Excel Spreadsheet</option>
-                        <option value="Interactive">Interactive Dashboard</option>
+                        <option value="PDF"><?php echo __('PDF Document'); ?></option>
+                        <option value="Excel"><?php echo __('Excel Spreadsheet'); ?></option>
+                        <option value="Interactive"><?php echo __('Interactive Dashboard'); ?></option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="reportDescription">Description</label>
-                    <textarea id="reportDescription" name="reportDescription" rows="3" placeholder="Describe the purpose and scope of this report"></textarea>
+                    <label for="reportDescription"><?php echo __('Description'); ?></label>
+                    <textarea id="reportDescription" name="reportDescription" rows="3" 
+                              placeholder="<?php echo __('Describe the purpose and scope of this report'); ?>"></textarea>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" onclick="closeReportBuilder()">Cancel</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeReportBuilder()">
+                        <?php echo __('Cancel'); ?>
+                    </button>
                     <button type="submit" class="btn btn-success">
-                        <i class="fas fa-cog"></i> Generate Report
+                        <i class="fas fa-cog"></i> <?php echo __('Generate Report'); ?>
                     </button>
                 </div>
             </form>
@@ -1082,7 +1058,7 @@ $report_types = [
 
     <script>
         // Chart data from PHP
-        const monthlyDownloads = <?php echo json_encode($monthly_downloads); ?>;
+        const monthlyDownloads = <?php echo json_encode($monthly_downloads_chart); ?>;
         const reportTypes = <?php echo json_encode($report_types); ?>;
 
         // Downloads trend chart
@@ -1092,7 +1068,7 @@ $report_types = [
             data: {
                 labels: Object.keys(monthlyDownloads),
                 datasets: [{
-                    label: 'Downloads',
+                    label: '<?php echo __('Downloads'); ?>',
                     data: Object.values(monthlyDownloads),
                     borderColor: '#3b82f6',
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -1181,6 +1157,13 @@ $report_types = [
                     card.style.display = 'none';
                 }
             });
+            
+            // Show/hide category sections based on whether they have visible reports
+            document.querySelectorAll('.category-section').forEach(section => {
+                const hasVisibleReports = Array.from(section.querySelectorAll('.report-card'))
+                    .some(card => card.style.display !== 'none');
+                section.style.display = hasVisibleReports ? 'block' : 'none';
+            });
         }
 
         // Event listeners for filters
@@ -1201,12 +1184,8 @@ $report_types = [
         // Report builder form submission
         document.getElementById('reportBuilderForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            // Simulate report generation
-            alert('Report generation started! You will be notified when it\'s ready.');
+            alert('<?php echo __('Report generation started! You will be notified when it\'s ready.'); ?>');
             closeReportBuilder();
-            
-            // Reset form
             this.reset();
         });
 

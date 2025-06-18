@@ -1,5 +1,6 @@
 <?php
 session_start();
+require_once 'lang/translation.php';
 
 // Sample entity data for demonstration
 $entities = [
@@ -103,7 +104,7 @@ $total_risks = array_sum(array_column($entities, 'risks_count'));
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entities Management - RiskGuard Pro</title>
+    <title><?php echo __('Entities Management'); ?> - <?php echo __('RiskGuard Pro'); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -653,27 +654,27 @@ $total_risks = array_sum(array_column($entities, 'risks_count'));
         <aside class="sidebar">
             <div class="logo">
                 <i class="fas fa-shield-alt"></i>
-                <span>RiskGuard Pro</span>
+                <span><?php echo __('RiskGuard Pro'); ?></span>
             </div>
             
             <nav>
                 <ul>
-                    <li><a href="index.php"><i class="fas fa-chart-line"></i> Dashboard</a></li>
-                    <li><a href="clients.php"><i class="fas fa-building"></i> Clients</a></li>
-                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> Projects</a></li>
-                    <li><a href="entities.php" class="active"><i class="fas fa-sitemap"></i> Entities</a></li>
-                    <li><a href="processes.php"><i class="fas fa-cogs"></i> Processes</a></li>
-                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> Risks</a></li>
-                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> Controls</a></li>
-                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> Reports</a></li>
+                    <li><a href="index.php"><i class="fas fa-chart-line"></i> <?php echo __('Dashboard'); ?></a></li>
+                    <li><a href="clients.php"><i class="fas fa-building"></i> <?php echo __('Clients'); ?></a></li>
+                    <li><a href="projects.php"><i class="fas fa-project-diagram"></i> <?php echo __('Projects'); ?></a></li>
+                    <li><a href="entities.php" class="active"><i class="fas fa-sitemap"></i> <?php echo __('Entities'); ?></a></li>
+                    <li><a href="processes.php"><i class="fas fa-cogs"></i> <?php echo __('Processes'); ?></a></li>
+                    <li><a href="risks.php"><i class="fas fa-exclamation-triangle"></i> <?php echo __('Risks'); ?></a></li>
+                    <li><a href="controls.php"><i class="fas fa-shield-check"></i> <?php echo __('Controls'); ?></a></li>
+                    <li><a href="reports.php"><i class="fas fa-file-alt"></i> <?php echo __('Reports'); ?></a></li>
                 </ul>
             </nav>
             
             <div class="user-info">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="Admin User">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff&rounded=true" alt="<?php echo __('Admin User'); ?>">
                 <div>
-                    <strong>Admin User</strong>
-                    <small>System Administrator</small>
+                    <strong><?php echo __('Admin User'); ?></strong>
+                    <small><?php echo __('System Administrator'); ?></small>
                 </div>
             </div>
         </aside>
@@ -681,7 +682,7 @@ $total_risks = array_sum(array_column($entities, 'risks_count'));
         <div class="content">
             <header class="header">
                 <div class="header-left">
-                    <h1>Entities Management</h1>
+                    <h1><?php echo __('Entities Management'); ?></h1>
                 </div>
                 <div class="header-right">
                     <div class="notifications">
@@ -689,7 +690,7 @@ $total_risks = array_sum(array_column($entities, 'risks_count'));
                         <span class="badge">5</span>
                     </div>
                     <a href="logout.php" class="btn">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                        <i class="fas fa-sign-out-alt"></i> <?php echo __('Logout'); ?>
                     </a>
                 </div>
             </header>
@@ -697,73 +698,73 @@ $total_risks = array_sum(array_column($entities, 'risks_count'));
             <main class="main-content">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3>Total Entities</h3>
+                        <h3><?php echo __('Total Entities'); ?></h3>
                         <div class="stat-value"><?php echo $total_entities; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-sitemap"></i> All entities
+                            <i class="fas fa-sitemap"></i> <?php echo __('All entities'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Root Entities</h3>
+                        <h3><?php echo __('Root Entities'); ?></h3>
                         <div class="stat-value"><?php echo $root_entities; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-layer-group"></i> Top level
+                            <i class="fas fa-layer-group"></i> <?php echo __('Top level'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Processes</h3>
+                        <h3><?php echo __('Total Processes'); ?></h3>
                         <div class="stat-value"><?php echo $total_processes; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-cogs"></i> Across entities
+                            <i class="fas fa-cogs"></i> <?php echo __('Across entities'); ?>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <h3>Total Risks</h3>
+                        <h3><?php echo __('Total Risks'); ?></h3>
                         <div class="stat-value"><?php echo $total_risks; ?></div>
                         <div class="stat-change">
-                            <i class="fas fa-exclamation-triangle"></i> Being managed
+                            <i class="fas fa-exclamation-triangle"></i> <?php echo __('Being managed'); ?>
                         </div>
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Organizational Entities</h3>
-<a href="add_entity.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Add New Entity
+                        <h3 class="card-title"><?php echo __('Organizational Entities'); ?></h3>
+                        <a href="add_entity.php" class="btn btn-success">
+                            <i class="fas fa-plus"></i> <?php echo __('Add New Entity'); ?>
                         </a>
                     </div>
                     <div class="card-body">
                         <div class="search-filter">
                             <div class="search-box">
                                 <i class="fas fa-search"></i>
-                                <input type="text" placeholder="Search entities..." id="searchInput">
+                                <input type="text" placeholder="<?php echo __('Search entities...'); ?>" id="searchInput">
                             </div>
                             <select class="filter-select" id="projectFilter">
-                                <option value="">All Projects</option>
+                                <option value=""><?php echo __('All Projects'); ?></option>
                                 <option value="Customer Portal Redesign">Customer Portal Redesign</option>
                                 <option value="Mobile Banking App">Mobile Banking App</option>
                                 <option value="ERP System Implementation">ERP System Implementation</option>
                             </select>
                             <select class="filter-select" id="levelFilter">
-                                <option value="">All Levels</option>
-                                <option value="root">Root Level</option>
-                                <option value="child">Child Level</option>
+                                <option value=""><?php echo __('All Levels'); ?></option>
+                                <option value="root"><?php echo __('Root Level'); ?></option>
+                                <option value="child"><?php echo __('Child Level'); ?></option>
                             </select>
                         </div>
                         
                         <table class="table" id="entitiesTable">
                             <thead>
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Entity Name</th>
-                                    <th>Project</th>
-                                    <th>Parent Entity</th>
-                                    <th>Children</th>
-                                    <th>Processes</th>
-                                    <th>Risks</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
+                                    <th><?php echo __('Code'); ?></th>
+                                    <th><?php echo __('Entity Name'); ?></th>
+                                    <th><?php echo __('Project'); ?></th>
+                                    <th><?php echo __('Parent Entity'); ?></th>
+                                    <th><?php echo __('Children'); ?></th>
+                                    <th><?php echo __('Processes'); ?></th>
+                                    <th><?php echo __('Risks'); ?></th>
+                                    <th><?php echo __('Created'); ?></th>
+                                    <th><?php echo __('Actions'); ?></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -789,7 +790,7 @@ $total_risks = array_sum(array_column($entities, 'risks_count'));
                                                 <?php echo htmlspecialchars($entity['parent_name']); ?>
                                             </span>
                                         <?php else: ?>
-                                            <span style="color: var(--gray); font-style: italic;">Root Entity</span>
+                                            <span style="color: var(--gray); font-style: italic;"><?php echo __('Root Entity'); ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td><?php echo $entity['children_count']; ?></td>
@@ -798,10 +799,10 @@ $total_risks = array_sum(array_column($entities, 'risks_count'));
                                     <td><?php echo date('M j, Y', strtotime($entity['createdAt'])); ?></td>
                                     <td>
                                         <a href="entity_details.php?id=<?php echo $entity['id']; ?>" class="btn btn-primary btn-sm">
-                                            <i class="fas fa-eye"></i> View
+                                            <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
                                         <a href="entity_edit.php?id=<?php echo $entity['id']; ?>" class="btn btn-primary btn-sm" style="background: var(--warning);">
-                                            <i class="fas fa-edit"></i> Edit
+                                            <i class="fas fa-edit"></i> <?php echo __('Edit'); ?>
                                         </a>
                                     </td>
                                 </tr>
