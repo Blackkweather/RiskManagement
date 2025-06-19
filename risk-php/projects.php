@@ -1,81 +1,16 @@
 <?php
 session_start();
+require_once __DIR__ . '/config/database.php';
 
-// Sample project data for demonstration
-$projects = [
-    [
-        'id' => 1,
-        'name' => 'Customer Portal Redesign',
-        'code' => 'CPR001',
-        'client_name' => 'TechCorp Solutions',
-        'active' => true,
-        'createdAt' => '2025-01-20',
-        'entities_count' => 5,
-        'processes_count' => 12,
-        'risks_count' => 8,
-        'completion' => 65
-    ],
-    [
-        'id' => 2,
-        'name' => 'Mobile Banking App',
-        'code' => 'MBA002',
-        'client_name' => 'Global Finance Inc',
-        'active' => true,
-        'createdAt' => '2025-02-15',
-        'entities_count' => 3,
-        'processes_count' => 8,
-        'risks_count' => 5,
-        'completion' => 40
-    ],
-    [
-        'id' => 3,
-        'name' => 'ERP System Implementation',
-        'code' => 'ERP003',
-        'client_name' => 'Manufacturing Pro',
-        'active' => true,
-        'createdAt' => '2025-03-01',
-        'entities_count' => 8,
-        'processes_count' => 25,
-        'risks_count' => 15,
-        'completion' => 25
-    ],
-    [
-        'id' => 4,
-        'name' => 'Data Migration Project',
-        'code' => 'DMP004',
-        'client_name' => 'Healthcare Partners',
-        'active' => false,
-        'createdAt' => '2025-01-10',
-        'entities_count' => 2,
-        'processes_count' => 6,
-        'risks_count' => 3,
-        'completion' => 100
-    ],
-    [
-        'id' => 5,
-        'name' => 'E-commerce Platform',
-        'code' => 'ECP005',
-        'client_name' => 'Retail Excellence',
-        'active' => true,
-        'createdAt' => '2025-04-01',
-        'entities_count' => 4,
-        'processes_count' => 15,
-        'risks_count' => 6,
-        'completion' => 15
-    ],
-    [
-        'id' => 6,
-        'name' => 'Security Audit System',
-        'code' => 'SAS006',
-        'client_name' => 'TechCorp Solutions',
-        'active' => true,
-        'createdAt' => '2025-05-01',
-        'entities_count' => 3,
-        'processes_count' => 10,
-        'risks_count' => 4,
-        'completion' => 30
-    ]
-];
+// Fetch projects from the database
+$projects = [];
+try {
+    $db = (new Database())->getConnection();
+    $stmt = $db->query('SELECT * FROM project');
+    $projects = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $error = 'Could not load projects.';
+}
 
 $total_projects = count($projects);
 $active_projects = count(array_filter($projects, function($project) { return $project['active']; }));

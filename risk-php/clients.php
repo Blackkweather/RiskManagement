@@ -1,69 +1,16 @@
 <?php
 session_start();
+require_once __DIR__ . '/config/database.php';
 
-// Sample client data for demonstration
-$clients = [
-    [
-        'id' => 1,
-        'denomination' => 'TechCorp Solutions',
-        'judicial' => 'LLC',
-        'sector' => 'Technology',
-        'code' => 'TC001',
-        'config' => 'NORMAL',
-        'appetencyActive' => true,
-        'createdAt' => '2025-01-15',
-        'projects_count' => 3,
-        'active_risks' => 12
-    ],
-    [
-        'id' => 2,
-        'denomination' => 'Global Finance Inc',
-        'judicial' => 'Corporation',
-        'sector' => 'Financial Services',
-        'code' => 'GF002',
-        'config' => 'COEFFICIENT',
-        'appetencyActive' => true,
-        'createdAt' => '2025-02-20',
-        'projects_count' => 2,
-        'active_risks' => 8
-    ],
-    [
-        'id' => 3,
-        'denomination' => 'Healthcare Partners',
-        'judicial' => 'Partnership',
-        'sector' => 'Healthcare',
-        'code' => 'HP003',
-        'config' => 'BASIC',
-        'appetencyActive' => false,
-        'createdAt' => '2025-03-10',
-        'projects_count' => 1,
-        'active_risks' => 3
-    ],
-    [
-        'id' => 4,
-        'denomination' => 'Manufacturing Pro',
-        'judicial' => 'LLC',
-        'sector' => 'Manufacturing',
-        'code' => 'MP004',
-        'config' => 'NORMAL',
-        'appetencyActive' => true,
-        'createdAt' => '2025-04-05',
-        'projects_count' => 4,
-        'active_risks' => 15
-    ],
-    [
-        'id' => 5,
-        'denomination' => 'Retail Excellence',
-        'judicial' => 'Corporation',
-        'sector' => 'Retail',
-        'code' => 'RE005',
-        'config' => 'COEFFICIENT',
-        'appetencyActive' => true,
-        'createdAt' => '2025-05-12',
-        'projects_count' => 2,
-        'active_risks' => 6
-    ]
-];
+// Fetch clients from the database
+$clients = [];
+try {
+    $db = (new Database())->getConnection();
+    $stmt = $db->query('SELECT * FROM client');
+    $clients = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $error = 'Could not load clients.';
+}
 
 $total_clients = count($clients);
 $active_clients = count(array_filter($clients, function($client) { return $client['appetencyActive']; }));

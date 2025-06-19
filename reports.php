@@ -985,9 +985,9 @@ if (empty($report_types)) {
                                         </div>
                                     </div>                                <div class="report-actions">
                                     <?php if ($report['status'] === 'Published'): ?>
-                                    <a href="download_report.php?id=<?php echo $report['id']; ?>" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-download"></i> <?php echo __('Download'); ?>
-                                    </a>
+<button class="btn btn-primary btn-sm download-btn" data-report-id="<?php echo $report['id']; ?>" data-format="pdf">
+    <i class="fas fa-download"></i> <?php echo __('Download'); ?>
+</button>
                                     <?php endif; ?>
                                     <a href="view_report.php?id=<?php echo $report['id']; ?>" class="btn btn-secondary btn-sm">
                                         <i class="fas fa-eye"></i> <?php echo __('View'); ?>
@@ -1184,7 +1184,7 @@ if (empty($report_types)) {
         // Report builder form submission
         document.getElementById('reportBuilderForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            alert('<?php echo __('Report generation started! You will be notified when it\'s ready.'); ?>');
+            alert(<?php echo json_encode(__('Report generation started! You will be notified when it\'s ready.')); ?>);
             closeReportBuilder();
             this.reset();
         });
@@ -1198,6 +1198,14 @@ if (empty($report_types)) {
         document.getElementById('reportBuilderModal').addEventListener('click', function(e) {
             if (e.target === this) {
                 closeReportBuilder();
+            }
+        });
+    </script>
+    <script src="js/enhanced_reports.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof ReportManager !== 'undefined') {
+                new ReportManager();
             }
         });
     </script>

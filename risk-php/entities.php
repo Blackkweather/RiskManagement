@@ -1,97 +1,16 @@
 <?php
 session_start();
+require_once __DIR__ . '/config/database.php';
 
-// Sample entity data for demonstration
-$entities = [
-    [
-        'id' => 1,
-        'name' => 'IT Department',
-        'code' => 'IT001',
-        'project_name' => 'Customer Portal Redesign',
-        'parent_name' => null,
-        'createdAt' => '2025-01-25',
-        'children_count' => 3,
-        'processes_count' => 8,
-        'risks_count' => 5
-    ],
-    [
-        'id' => 2,
-        'name' => 'Development Team',
-        'code' => 'DEV001',
-        'project_name' => 'Customer Portal Redesign',
-        'parent_name' => 'IT Department',
-        'createdAt' => '2025-01-26',
-        'children_count' => 0,
-        'processes_count' => 4,
-        'risks_count' => 3
-    ],
-    [
-        'id' => 3,
-        'name' => 'QA Team',
-        'code' => 'QA001',
-        'project_name' => 'Customer Portal Redesign',
-        'parent_name' => 'IT Department',
-        'createdAt' => '2025-01-26',
-        'children_count' => 0,
-        'processes_count' => 2,
-        'risks_count' => 1
-    ],
-    [
-        'id' => 4,
-        'name' => 'Security Team',
-        'code' => 'SEC001',
-        'project_name' => 'Customer Portal Redesign',
-        'parent_name' => 'IT Department',
-        'createdAt' => '2025-01-26',
-        'children_count' => 0,
-        'processes_count' => 2,
-        'risks_count' => 1
-    ],
-    [
-        'id' => 5,
-        'name' => 'Finance Division',
-        'code' => 'FIN001',
-        'project_name' => 'Mobile Banking App',
-        'parent_name' => null,
-        'createdAt' => '2025-02-20',
-        'children_count' => 2,
-        'processes_count' => 6,
-        'risks_count' => 4
-    ],
-    [
-        'id' => 6,
-        'name' => 'Risk Management',
-        'code' => 'RISK001',
-        'project_name' => 'Mobile Banking App',
-        'parent_name' => 'Finance Division',
-        'createdAt' => '2025-02-21',
-        'children_count' => 0,
-        'processes_count' => 3,
-        'risks_count' => 2
-    ],
-    [
-        'id' => 7,
-        'name' => 'Compliance',
-        'code' => 'COMP001',
-        'project_name' => 'Mobile Banking App',
-        'parent_name' => 'Finance Division',
-        'createdAt' => '2025-02-21',
-        'children_count' => 0,
-        'processes_count' => 3,
-        'risks_count' => 2
-    ],
-    [
-        'id' => 8,
-        'name' => 'Operations',
-        'code' => 'OPS001',
-        'project_name' => 'ERP System Implementation',
-        'parent_name' => null,
-        'createdAt' => '2025-03-05',
-        'children_count' => 4,
-        'processes_count' => 15,
-        'risks_count' => 8
-    ]
-];
+// Fetch entities from the database
+$entities = [];
+try {
+    $db = (new Database())->getConnection();
+    $stmt = $db->query('SELECT * FROM entity');
+    $entities = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $error = 'Could not load entities.';
+}
 
 $total_entities = count($entities);
 $root_entities = count(array_filter($entities, function($entity) { return $entity['parent_name'] === null; }));

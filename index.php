@@ -826,37 +826,39 @@ if ($conn) {
             new Chart(riskDistCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Critical', 'High', 'Medium', 'Low'],
+                    labels: Object.keys(riskByCategory),
                     datasets: [{
-            data: [5, 8, 10, 0],
-            backgroundColor: [
-                '#ef4444',
-                '#f59e0b',
-                '#10b981',
-                '#64748b'
-            ],
-            borderWidth: 0,
-            cutout: '60%'
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    padding: 20,
-                    usePointStyle: true,
-                    font: {
-                        size: 12,
-                        weight: '600'
+                        data: Object.values(riskByCategory),
+                        backgroundColor: [
+                            '#ef4444',
+                            '#f59e0b',
+                            '#10b981',
+                            '#64748b',
+                            '#2563eb',
+                            '#3b82f6'
+                        ],
+                        borderWidth: 0,
+                        cutout: '60%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                font: {
+                                    size: 12,
+                                    weight: '600'
+                                }
+                            }
+                        }
                     }
                 }
-            }
-        }
-    }
-});
+            });
 
 const riskDistCtx = document.getElementById('riskDistributionChart').getContext('2d');
 new Chart(riskDistCtx, {

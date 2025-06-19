@@ -226,37 +226,6 @@
             padding: 0 20px;
         }
 
-        .demo-login {
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
-            color: #4a5568;
-            padding: 15px;
-            border-radius: 12px;
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .demo-login h4 {
-            margin-bottom: 10px;
-            color: #2d3748;
-        }
-
-        .demo-credentials {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 0.9rem;
-        }
-
-        .error-message {
-            background: #fed7d7;
-            color: #c53030;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
         @media (max-width: 768px) {
             .login-container {
                 grid-template-columns: 1fr;
@@ -321,26 +290,6 @@
                     Sign In
                 </button>
             </form>
-
-            <div class="divider">
-                <span>Demo Access</span>
-            </div>
-
-            <div class="demo-login">
-                <h4>Demo Credentials</h4>
-                <div class="demo-credentials">
-                    <div>
-                        <strong>Admin:</strong><br>
-                        admin@riskguard.com<br>
-                        admin123
-                    </div>
-                    <div>
-                        <strong>Manager:</strong><br>
-                        manager@riskguard.com<br>
-                        manager123
-                    </div>
-                </div>
-            </div>
         </div>
 
         <div class="login-visual">
@@ -375,50 +324,45 @@
     </div>
 
     <script>
-        // Demo login functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            // Auto-fill demo credentials when clicked
-            const demoCredentials = document.querySelector('.demo-credentials');
-            demoCredentials.addEventListener('click', function(e) {
-                if (e.target.closest('div:first-child')) {
-                    // Admin credentials
-                    document.getElementById('email').value = 'admin@riskguard.com';
-                    document.getElementById('password').value = 'admin123';
-                } else if (e.target.closest('div:last-child')) {
-                    // Manager credentials
-                    document.getElementById('email').value = 'manager@riskguard.com';
-                    document.getElementById('password').value = 'manager123';
-                }
-            });
-        });
-
         // Form submission
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const loginButton = document.getElementById('loginButton');
             const errorMessage = document.getElementById('errorMessage');
-            
-            // Show loading state
             loginButton.disabled = true;
             loginButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
             errorMessage.style.display = 'none';
-            
-            // Simulate authentication (replace with actual API call)
-            setTimeout(() => {
-                if ((email === 'admin@riskguard.com' && password === 'admin123') ||
-                    (email === 'manager@riskguard.com' && password === 'manager123')) {
-                    // Success - redirect to dashboard
-                    window.location.href = 'index.php';
+            // Send real AJAX request to api/auth.php
+            fetch('api/auth.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.user) {
+                    // Save user info to sessionStorage/localStorage if needed
+                    // Redirect based on role
+                    if (data.user.role === 'Client') {
+                        window.location.href = 'client_dashboard.php';
+                    } else if (data.user.role === 'Risk Manager') {
+                        window.location.href = 'risk_manager_dashboard.php';
+                    } else {
+                        window.location.href = 'index.php';
+                    }
                 } else {
-                    // Error - show message
                     errorMessage.style.display = 'block';
                     loginButton.disabled = false;
                     loginButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
                 }
-            }, 1500);
+            })
+            .catch(() => {
+                errorMessage.style.display = 'block';
+                loginButton.disabled = false;
+                loginButton.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+            });
         });
 
         // Input validation

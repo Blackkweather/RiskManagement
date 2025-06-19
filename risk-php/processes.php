@@ -1,113 +1,16 @@
 <?php
 session_start();
+require_once __DIR__ . '/config/database.php';
 
-// Sample process data for demonstration
-$processes = [
-    [
-        'id' => 1,
-        'name' => 'User Authentication',
-        'code' => 'AUTH001',
-        'description' => 'Process for authenticating users and managing access control',
-        'domaine_name' => 'Security Domain',
-        'parent_name' => null,
-        'entity_name' => 'IT Department',
-        'project_name' => 'Customer Portal Redesign',
-        'createdAt' => '2025-01-28',
-        'activities_count' => 5,
-        'risks_count' => 3
-    ],
-    [
-        'id' => 2,
-        'name' => 'Login Validation',
-        'code' => 'LOGIN001',
-        'description' => 'Validate user credentials and session management',
-        'domaine_name' => 'Security Domain',
-        'parent_name' => 'User Authentication',
-        'entity_name' => 'Development Team',
-        'project_name' => 'Customer Portal Redesign',
-        'createdAt' => '2025-01-29',
-        'activities_count' => 3,
-        'risks_count' => 2
-    ],
-    [
-        'id' => 3,
-        'name' => 'Password Recovery',
-        'code' => 'PASS001',
-        'description' => 'Process for handling password reset requests',
-        'domaine_name' => 'Security Domain',
-        'parent_name' => 'User Authentication',
-        'entity_name' => 'Development Team',
-        'project_name' => 'Customer Portal Redesign',
-        'createdAt' => '2025-01-29',
-        'activities_count' => 4,
-        'risks_count' => 1
-    ],
-    [
-        'id' => 4,
-        'name' => 'Transaction Processing',
-        'code' => 'TXN001',
-        'description' => 'Core process for handling financial transactions',
-        'domaine_name' => 'Financial Operations',
-        'parent_name' => null,
-        'entity_name' => 'Finance Division',
-        'project_name' => 'Mobile Banking App',
-        'createdAt' => '2025-02-25',
-        'activities_count' => 8,
-        'risks_count' => 5
-    ],
-    [
-        'id' => 5,
-        'name' => 'Payment Validation',
-        'code' => 'PAY001',
-        'description' => 'Validate payment details and fraud detection',
-        'domaine_name' => 'Financial Operations',
-        'parent_name' => 'Transaction Processing',
-        'entity_name' => 'Risk Management',
-        'project_name' => 'Mobile Banking App',
-        'createdAt' => '2025-02-26',
-        'activities_count' => 3,
-        'risks_count' => 2
-    ],
-    [
-        'id' => 6,
-        'name' => 'Compliance Reporting',
-        'code' => 'COMP001',
-        'description' => 'Generate regulatory compliance reports',
-        'domaine_name' => 'Financial Operations',
-        'parent_name' => 'Transaction Processing',
-        'entity_name' => 'Compliance',
-        'project_name' => 'Mobile Banking App',
-        'createdAt' => '2025-02-26',
-        'activities_count' => 2,
-        'risks_count' => 1
-    ],
-    [
-        'id' => 7,
-        'name' => 'Inventory Management',
-        'code' => 'INV001',
-        'description' => 'Manage product inventory and stock levels',
-        'domaine_name' => 'Operations',
-        'parent_name' => null,
-        'entity_name' => 'Operations',
-        'project_name' => 'ERP System Implementation',
-        'createdAt' => '2025-03-10',
-        'activities_count' => 6,
-        'risks_count' => 4
-    ],
-    [
-        'id' => 8,
-        'name' => 'Supply Chain Coordination',
-        'code' => 'SUP001',
-        'description' => 'Coordinate with suppliers and manage procurement',
-        'domaine_name' => 'Operations',
-        'parent_name' => 'Inventory Management',
-        'entity_name' => 'Operations',
-        'project_name' => 'ERP System Implementation',
-        'createdAt' => '2025-03-11',
-        'activities_count' => 4,
-        'risks_count' => 3
-    ]
-];
+// Fetch processes from the database
+$processes = [];
+try {
+    $db = (new Database())->getConnection();
+    $stmt = $db->query('SELECT * FROM process');
+    $processes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $error = 'Could not load processes.';
+}
 
 $total_processes = count($processes);
 $root_processes = count(array_filter($processes, function($process) { return $process['parent_name'] === null; }));
