@@ -795,12 +795,21 @@ if ($db) {
                                     </td>
                                     <td><?php echo date('M j, Y', strtotime($risk['createdAt'])); ?></td>
                                     <td>
-                                        <a href="risk_details.php?id=<?php echo $risk['id']; ?>" class="btn btn-primary btn-sm">
+                                        <a href="risk_detail.php?id=<?php echo $risk['id']; ?>" class="btn btn-primary btn-sm">
                                             <i class="fas fa-eye"></i> <?php echo __('View'); ?>
                                         </a>
+                                        <?php if (isset($_SESSION['user']) && ($_SESSION['user']['role'] === 'Admin' || $_SESSION['user']['role'] === 'RiskManager')): ?>
                                         <a href="risk_edit.php?id=<?php echo $risk['id']; ?>" class="btn btn-primary btn-sm" style="background: var(--warning);">
                                             <i class="fas fa-edit"></i> <?php echo __('Edit'); ?>
                                         </a>
+                                        <form method="POST" action="api/risk.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this risk?');">
+                                            <input type="hidden" name="action" value="delete">
+                                            <input type="hidden" name="id" value="<?php echo $risk['id']; ?>">
+                                            <button type="submit" class="btn btn-danger btn-sm" style="background: var(--danger); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; margin-left: 4px;">
+                                                <i class="fas fa-trash"></i> <?php echo __('Delete'); ?>
+                                            </button>
+                                        </form>
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

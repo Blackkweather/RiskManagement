@@ -1,3 +1,6 @@
+<?php
+session_start();
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -1481,6 +1484,7 @@
                     <!-- Quick Links -->
                     <div class="footer-section">
                         <h3 class="footer-title">Liens Rapides</h3>
+                        <?php if (isset($_SESSION['user_id'])): ?>
                         <ul class="footer-links">
                             <li><a href="index.php">Tableau de Bord</a></li>
                             <li><a href="risks.php">Gestion des Risques</a></li>
@@ -1488,17 +1492,22 @@
                             <li><a href="analytics.php">Analytics</a></li>
                             <li><a href="settings.php">Paramètres</a></li>
                         </ul>
+                        <?php else: ?>
+                        <ul class="footer-links">
+                            <li><span style="color:#aaa;">Connectez-vous pour accéder aux liens rapides</span></li>
+                        </ul>
+                        <?php endif; ?>
                     </div>
                     
                     <!-- Solutions -->
                     <div class="footer-section">
                         <h3 class="footer-title">Solutions</h3>
                         <ul class="footer-links">
-                            <li><a href="#">Gouvernance</a></li>
-                            <li><a href="#">Gestion des Risques</a></li>
-                            <li><a href="#">Conformité</a></li>
-                            <li><a href="#">Audit Interne</a></li>
-                            <li><a href="#">Cybersécurité</a></li>
+                            <li><a href="solution_gouvernance.php">Gouvernance</a></li>
+                            <li><a href="solution_risques.php">Gestion des Risques</a></li>
+                            <li><a href="solution_conformite.php">Conformité</a></li>
+                            <li><a href="solution_audit.php">Audit Interne</a></li>
+                            <li><a href="solution_cybersecurite.php">Cybersécurité</a></li>
                         </ul>
                     </div>
                     
